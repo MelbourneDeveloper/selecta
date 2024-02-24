@@ -4,16 +4,17 @@ import 'package:dart_application_20/where_clause_element.dart';
 ///This is an oversimplication. It may be slightly different for each
 ///db platform. However, it will be mostly the same for each platform and
 ///the key is only hooking into the platform specifics where necessary
-String toSQL(List<WhereClauseElement> where) => 'WHERE ${where.map((element) {
-      return switch (element) {
-        (WhereCondition condition) =>
-          '${condition.leftOperand}${getClauseOperatorSymbol(condition.clauseOperator)}${condition.rightOperand}',
-        (LogicalOperator logicalOperator) =>
+String toSQL(List<WhereClauseElement> where) => 'WHERE ${where.map(
+      (element) => switch (element) {
+        (final WhereCondition condition) => '${condition.leftOperand}'
+            '${getClauseOperatorSymbol(condition.clauseOperator)}'
+            '${condition.rightOperand}',
+        (final LogicalOperator logicalOperator) =>
           getLogicalOperatorSymbol(logicalOperator),
-        (GroupingOperator groupingOperator) =>
+        (final GroupingOperator groupingOperator) =>
           getGroupingOperatorSymbol(groupingOperator),
-      };
-    }).join(' ')}';
+      },
+    ).join(' ')}';
 
 String getClauseOperatorSymbol(ClauseOperator clauseOperator) =>
     switch (clauseOperator) {
@@ -38,8 +39,11 @@ String getLogicalOperatorSymbol(LogicalOperator logicalOperator) =>
 class WhereClauseBuilder {
   final List<WhereClauseElement> _whereClause = [];
 
-  void condition(Operand leftOperand, ClauseOperator clauseOperator,
-      Operand rightOperand) {
+  void condition(
+    Operand leftOperand,
+    ClauseOperator clauseOperator,
+    Operand rightOperand,
+  ) {
     _whereClause.add(WhereCondition(leftOperand, clauseOperator, rightOperand));
   }
 
@@ -51,7 +55,5 @@ class WhereClauseBuilder {
     _whereClause.add(groupingOperator);
   }
 
-  List<WhereClauseElement> build() {
-    return _whereClause;
-  }
+  List<WhereClauseElement> build() => _whereClause;
 }
