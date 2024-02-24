@@ -4,6 +4,7 @@ import 'package:dart_application_20/where_clause_element.dart';
 import 'package:test/test.dart';
 
 const name = ColumnReferenceOperand('NAME');
+const id = ColumnReferenceOperand('ID');
 
 void main() {
   test('Go', () {
@@ -42,16 +43,14 @@ void main() {
       )
       ..and()
       ..openBracket()
-      ..condition(
-        const ColumnReferenceOperand('ID'),
-        ClauseOperator.equals,
-        NumberLiteralOperand(123),
+      ..equalsNumber(
+        id,
+        123,
       )
       ..or()
-      ..condition(
-        const ColumnReferenceOperand('ID'),
-        ClauseOperator.equals,
-        NumberLiteralOperand(321),
+      ..equalsNumber(
+        id,
+        321,
       )
       ..closeBracket();
 
