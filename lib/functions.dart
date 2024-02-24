@@ -1,4 +1,6 @@
 import 'package:dart_application_20/operand.dart';
+import 'package:dart_application_20/select_statement_builder.dart';
+import 'package:dart_application_20/where_clause_builder.dart';
 import 'package:dart_application_20/where_clause_element.dart';
 
 ///This is an oversimplication. It may be slightly different for each
@@ -15,6 +17,22 @@ String toSQL(List<WhereClauseElement> where) => 'WHERE ${where.map(
           getGroupingOperatorSymbol(groupingOperator),
       },
     ).join(' ')}';
+
+String toSelectSQL(List<SelectedColumn> selectedColumns) =>
+    'SELECT ${selectedColumns.map(
+          (column) => switch (column) {
+            // ignore: unused_local_variable
+            (final AllColumns allColumns) =>
+              '${allColumns.tableName != null ? '${allColumns.tableName}'
+                  '.' : ''}*',
+            (final ColumnReference columnReference) =>
+              _columnReferenceToString(columnReference),
+          },
+        ).join(', ')}';
+
+String _columnReferenceToString(ColumnReference columnReference) =>
+    '${columnReference.tableName != null ? '${columnReference.tableName}'
+        '.' : ''}${columnReference.columnName}';
 
 String getClauseOperatorSymbol(ClauseOperator clauseOperator) =>
     switch (clauseOperator) {
@@ -36,29 +54,7 @@ String getLogicalOperatorSymbol(LogicalOperator logicalOperator) =>
       LogicalOperator.or => 'OR',
     };
 
-class WhereClauseBuilder {
-  final List<WhereClauseElement> _whereClause = [];
-
-  void condition(
-    Operand leftOperand,
-    ClauseOperator clauseOperator,
-    Operand rightOperand,
-  ) {
-    _whereClause.add(WhereCondition(leftOperand, clauseOperator, rightOperand));
-  }
-
-  void logicalOperator(LogicalOperator logicalOperator) {
-    _whereClause.add(logicalOperator);
-  }
-
-  void groupingOperator(GroupingOperator groupingOperator) {
-    _whereClause.add(groupingOperator);
-  }
-
-  List<WhereClauseElement> build() => _whereClause;
-}
-
-extension Aasdasd on WhereClauseBuilder {
+extension WhereClauseBuilderExtensions on WhereClauseBuilder {
   void and() => logicalOperator(LogicalOperator.and);
   void or() => logicalOperator(LogicalOperator.or);
 
@@ -66,7 +62,9 @@ extension Aasdasd on WhereClauseBuilder {
   void closeBracket() => groupingOperator(GroupingOperator.close);
 
   void equalsNumber(
-          ColumnReferenceOperand columnReferenceOperand, num number,) =>
+    ColumnReferenceOperand columnReferenceOperand,
+    num number,
+  ) =>
       condition(
         columnReferenceOperand,
         ClauseOperator.equals,
