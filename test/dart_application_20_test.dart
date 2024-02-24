@@ -36,25 +36,24 @@ void main() {
 
   test('Builder Go', () {
     final builder = WhereClauseBuilder()
-      ..condition(
+      ..equalsText(
         name,
-        ClauseOperator.equals,
-        StringLiteralOperand('JIM'),
+        'JIM',
       )
-      ..logicalOperator(LogicalOperator.and)
-      ..groupingOperator(GroupingOperator.open)
+      ..and()
+      ..openBracket()
       ..condition(
         const ColumnReferenceOperand('ID'),
         ClauseOperator.equals,
         NumberLiteralOperand(123),
       )
-      ..logicalOperator(LogicalOperator.or)
+      ..or()
       ..condition(
         const ColumnReferenceOperand('ID'),
         ClauseOperator.equals,
         NumberLiteralOperand(321),
       )
-      ..groupingOperator(GroupingOperator.close);
+      ..closeBracket();
 
     final sql = toSQL(builder.build());
 

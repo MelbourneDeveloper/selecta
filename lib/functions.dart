@@ -57,3 +57,20 @@ class WhereClauseBuilder {
 
   List<WhereClauseElement> build() => _whereClause;
 }
+
+const and = LogicalOperator.and;
+
+extension Aasdasd on WhereClauseBuilder {
+  void and() => logicalOperator(LogicalOperator.and);
+  void or() => logicalOperator(LogicalOperator.or);
+
+  void openBracket() => groupingOperator(GroupingOperator.open);
+  void closeBracket() => groupingOperator(GroupingOperator.close);
+
+  void equalsText(ColumnReferenceOperand columnReferenceOperand, String text) =>
+      condition(
+        columnReferenceOperand,
+        ClauseOperator.equals,
+        StringLiteralOperand(text),
+      );
+}
