@@ -1,7 +1,9 @@
 sealed class SelectedColumn {}
 
 final class AllColumns extends SelectedColumn {
-  late final String? tableName;
+  AllColumns([this.tableName]);
+
+ final String? tableName;
 }
 
 final class ColumnReference extends SelectedColumn {
