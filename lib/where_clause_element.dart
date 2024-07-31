@@ -1,3 +1,4 @@
+import 'package:dart_application_20/functions.dart';
 import 'package:dart_application_20/operand.dart';
 
 /// A type that represents a where clause element.
@@ -16,6 +17,27 @@ final class WhereCondition implements WhereClauseElement {
 
   /// The operator of the condition.
   final ClauseOperator clauseOperator;
+
+  @override
+  String toString() =>
+      // ignore: no_runtimetype_tostring
+      '$runtimeType $leftOperand ${getClauseOperatorSymbol(clauseOperator)}'
+      ' $rightOperand';
+
+  @override
+  bool operator ==(Object other) =>
+      other is WhereCondition &&
+      leftOperand == other.leftOperand &&
+      clauseOperator == other.clauseOperator &&
+      rightOperand == other.rightOperand;
+
+  @override
+  int get hashCode => Object.hash(
+        runtimeType,
+        leftOperand,
+        clauseOperator,
+        rightOperand,
+      );
 }
 
 /// A type that represents a logical operator.
@@ -37,6 +59,7 @@ enum ClauseOperator {
 enum LogicalOperator implements WhereClauseElement {
   /// The and operator.
   and,
+
   /// The or operator
   or,
 }
@@ -45,6 +68,7 @@ enum LogicalOperator implements WhereClauseElement {
 enum GroupingOperator implements WhereClauseElement {
   /// The open grouping operator.
   open,
+
   /// The close grouping operator.
   close,
 }

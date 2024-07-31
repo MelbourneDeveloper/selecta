@@ -1,15 +1,20 @@
 import 'package:collection/collection.dart';
 import 'package:dart_application_20/functions.dart';
+import 'package:dart_application_20/select_statement.dart';
 import 'package:dart_application_20/select_statement_builder.dart';
 import 'package:dart_application_20/sql_parser.dart';
-import 'package:dart_application_20/where_clause.dart';
+import 'package:dart_application_20/where_clause_element.dart';
 import 'package:test/test.dart';
 
 const listEquality = ListEquality<SelectedColumn>();
+const whereClauseEuality = ListEquality<WhereClauseElement>();
 
 void main() {
   void testBidirectionalConversion(String description, String sql) {
     test(description, () {
+      // ignore: avoid_print
+      print('Original:\n$sql\n');
+
       // SQL to SelectStatement
       final statement1 = toSelectStatement(sql);
 
@@ -22,13 +27,26 @@ void main() {
       // Compare the two SelectStatements
       expect(
         listEquality.equals(
-          statement1.selectedColumns,
-          statement2.selectedColumns,
+          statement1.select,
+          statement2.select,
         ),
         true,
       );
+
+      // ignore: avoid_print
+      print('Output:\n\n');
+
+      // ignore: avoid_print
+      print(statement1.where);
+      // ignore: avoid_print
+      print(statement1.select);
+
       expect(statement1.from, equals(statement2.from));
-      expect(statement1.where, equals(statement2.where));
+      expect(statement1.where.length, statement2.where.length);
+      expect(
+        whereClauseEuality.equals(statement1.where, statement2.where),
+        true,
+      );
 
       // Optional: Compare the generated SQL with the original
       // Note: This might fail due to formatting differences, so it's commented
@@ -72,7 +90,7 @@ void main() {
 
 // This function needs to be implemented
 String statementToSQL(SelectStatement statement) {
-  final columns = statement.selectedColumns.map((col) {
+  final columns = statement.select.map((col) {
     if (col is AllColumns) return '*';
     if (col is ColumnReference) {
       return col.tableName != null

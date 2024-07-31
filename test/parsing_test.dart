@@ -16,12 +16,12 @@ void main() {
     test(description, () {
       final result = toSelectStatement(sql);
 
-      expect(result.selectedColumns.length, expectedColumnCount);
+      expect(result.select.length, expectedColumnCount);
       expect(result.from, expectedFrom);
       expect(result.where.isEmpty, expectedWhereEmpty);
 
       if (validateColumns != null) {
-        validateColumns(result.selectedColumns);
+        validateColumns(result.select);
       }
 
       if (validateWhere != null) {

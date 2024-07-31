@@ -1,6 +1,6 @@
 import 'package:dart_application_20/operand.dart';
+import 'package:dart_application_20/select_statement.dart';
 import 'package:dart_application_20/select_statement_builder.dart';
-import 'package:dart_application_20/where_clause.dart';
 import 'package:dart_application_20/where_clause_element.dart';
 
 SelectStatement toSelectStatement(String sqlText) {
@@ -65,13 +65,22 @@ List<WhereClauseElement> _parseWhereClause(List<String> tokens) {
         elements.add(GroupingOperator.open);
       case ')':
         elements.add(GroupingOperator.close);
-      default:
-        if (i + 2 < tokens.length) {
+      case '=':
+      case '!=':
+      case '>':
+      case '<':
+        if (i > 0 && i + 1 < tokens.length) {
           elements.add(
-            _parseCondition(tokens[i], tokens[i + 1], tokens[i + 2]),
+            _parseCondition(tokens[i - 1], tokens[i], tokens[i + 1]),
           );
-          i += 2;
+          i++; // Skip the next token as it's part of this condition
+        } else {
+          throw FormatException('Invalid condition format near: ${tokens[i]}');
         }
+      default:
+        // Skip other tokens (column names, values) as they're handled in the
+        // condition parsing
+        continue;
     }
   }
   return elements;
@@ -96,7 +105,7 @@ ClauseOperator _parseClauseOperator(String operator) {
     case '<':
       return ClauseOperator.lessThan;
     default:
-      throw FormatException('Unsupported operator: $operator');
+      throw FormatException('Unsupported clause operator: $operator');
   }
 }
 
