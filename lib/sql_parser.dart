@@ -8,36 +8,36 @@ SelectStatement toSelectStatement(String sqlText) {
   final selectPart = parts[0].trim();
   final wherePart = parts.length > 1 ? parts[1].trim() : null;
 
-  final selectStatement = SelectStatement(where: []);
-
   // Parse SELECT part
   final selectClause = selectPart.substring(6).trim(); // Remove "SELECT "
   final fromIndex = selectClause.toUpperCase().indexOf(' FROM ');
   final columns =
       selectClause.substring(0, fromIndex).split(',').map((col) => col.trim());
+  final fromClause =
+      selectClause.substring(fromIndex + 6).trim(); // Remove " FROM "
 
+  final selectedColumns = <SelectedColumn>[];
   for (final column in columns) {
     if (column == '*') {
-      selectStatement.selectedColumns.add(AllColumns());
+      selectedColumns.add(AllColumns());
     } else {
       final parts = column.split('.');
       if (parts.length == 2) {
-        selectStatement.selectedColumns.add(
-          ColumnReference(parts[1], tableName: parts[0]),
-        );
+        selectedColumns.add(ColumnReference(parts[1], tableName: parts[0]));
       } else {
-        selectStatement.selectedColumns.add(ColumnReference(parts[0]));
+        selectedColumns.add(ColumnReference(parts[0]));
       }
     }
   }
 
   // Parse WHERE part
+  final where = <WhereClauseElement>[];
   if (wherePart != null) {
     final tokens = _tokenizeWhere(wherePart);
-    selectStatement.where.addAll(_parseWhereClause(tokens));
+    where.addAll(_parseWhereClause(tokens));
   }
 
-  return selectStatement;
+  return SelectStatement(fromClause, selectedColumns, where: where);
 }
 
 List<String> _tokenizeWhere(String wherePart) {

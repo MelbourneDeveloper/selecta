@@ -16,5 +16,6 @@ void main() {
     expect(allColumns.tableName, null);
     expect(allColumns.toString(), 'AllColumns ([All])');
     expect(result.where, isEmpty);
+    expect(result.from, 'Users');
   });
 }
