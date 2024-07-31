@@ -1,7 +1,26 @@
 import 'package:dart_application_20/operand.dart';
+import 'package:dart_application_20/select_statement.dart';
 import 'package:dart_application_20/select_statement_builder.dart';
 import 'package:dart_application_20/where_clause_builder.dart';
 import 'package:dart_application_20/where_clause_element.dart';
+
+String statementToSQL(SelectStatement statement) {
+  final columns = statement.select.map((col) {
+    if (col is AllColumns) return '*';
+    if (col is ColumnReference) {
+      return col.tableName != null
+          ? '${col.tableName}.${col.columnName}'
+          : col.columnName;
+    }
+    throw UnimplementedError('Unhandled column type: ${col.runtimeType}');
+  }).join(', ');
+
+  final whereClause = statement.where.isNotEmpty
+      ? ' WHERE ${toSQL(statement.where)}'
+      : '';
+
+  return 'SELECT $columns FROM ${statement.from}$whereClause';
+}
 
 ///This is an oversimplication. It may be slightly different for each
 ///db platform. However, it will be mostly the same for each platform and
@@ -18,7 +37,7 @@ String toSQL(List<WhereClauseElement> where) => 'WHERE ${where.map(
       },
     ).join(' ')}';
 
-/// Converts a list of selected columns to a SQL SELECT clause 
+/// Converts a list of selected columns to a SQL SELECT clause
 String toSelectSQL(List<SelectedColumn> selectedColumns) =>
     'SELECT ${selectedColumns.map(
           (column) => switch (column) {
@@ -60,7 +79,6 @@ String getLogicalOperatorSymbol(LogicalOperator logicalOperator) =>
 
 /// An extension on [SelectStatementBuilder] that provides a fluent API for
 extension WhereClauseBuilderExtensions on WhereClauseBuilder {
-
   /// Adds a where condition to the where clause.
   void and() => logicalOperator(LogicalOperator.and);
 

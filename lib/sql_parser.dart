@@ -71,9 +71,8 @@ List<WhereClauseElement> _parseWhereClause(List<String> tokens) {
       case ')':
         if (stack.isNotEmpty) {
           final groupedElements = current;
-          current = stack.removeLast()
-            ..addAll(groupedElements)
-            ..add(GroupingOperator.close);
+          current = stack.removeLast()..addAll(groupedElements);
+          elements.add(GroupingOperator.close);
         } else {
           throw const FormatException('Unmatched closing parenthesis');
         }
