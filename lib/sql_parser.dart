@@ -41,12 +41,13 @@ SelectStatement toSelectStatement(String sqlText) {
 }
 
 List<String> _tokenizeWhere(String wherePart) {
-  final regex = RegExp(r'''\s+|\(|\)|=|!=|>|<|AND|OR|\'.*?\'|\d+''');
+  final regex =
+      RegExp(r'''\s+|\(|\)|=|!=|>|<|AND|OR|"[^"]*"|'[^']*'|\d+(\.\d+)?|\w+''');
   return wherePart
       .splitMapJoin(
         regex,
         onMatch: (m) => '${m.group(0)}',
-        onNonMatch: (s) => s.isNotEmpty ? s : '',
+        onNonMatch: (s) => '',
       )
       .split(' ')
       .where((s) => s.isNotEmpty)
@@ -55,58 +56,50 @@ List<String> _tokenizeWhere(String wherePart) {
 
 List<WhereClauseElement> _parseWhereClause(List<String> tokens) {
   final elements = <WhereClauseElement>[];
-  final stack = <List<WhereClauseElement>>[];
-  var current = elements;
-
   for (var i = 0; i < tokens.length; i++) {
     switch (tokens[i].toUpperCase()) {
       case 'AND':
-        current.add(LogicalOperator.and);
+        elements.add(LogicalOperator.and);
       case 'OR':
-        current.add(LogicalOperator.or);
+        elements.add(LogicalOperator.or);
       case '(':
-        stack.add(current);
-        current = [];
         elements.add(GroupingOperator.open);
       case ')':
-        if (stack.isNotEmpty) {
-          final groupedElements = current;
-          current = stack.removeLast()..addAll(groupedElements);
-          elements.add(GroupingOperator.close);
-        } else {
-          throw const FormatException('Unmatched closing parenthesis');
-        }
-      case '=':
-      case '!=':
-      case '>':
-      case '<':
-        if (i > 0 && i + 1 < tokens.length) {
-          current.add(
-            _parseCondition(tokens[i - 1], tokens[i], tokens[i + 1]),
-          );
-          i++; // Skip the next token as it's part of this condition
-        } else {
-          throw FormatException('Invalid condition format near: ${tokens[i]}');
-        }
+        elements.add(GroupingOperator.close);
       default:
-        // Skip other tokens (column names, values) as they're handled in the
-        //condition parsing
-        continue;
+        if (i + 2 < tokens.length) {
+          if (_isClauseOperator(tokens[i + 1])) {
+            elements.add(
+              _parseCondition(tokens[i], tokens[i + 1], tokens[i + 2]),
+            );
+            i +=
+                2; // Skip the next two tokens as they're part of this condition
+          }
+        }
     }
   }
-
-  if (stack.isNotEmpty) {
-    throw const FormatException('Unmatched opening parenthesis');
-  }
-
   return elements;
+}
+
+bool _isClauseOperator(String token) =>
+    ['=', '!=', '>', '<', '>=', '<='].contains(token);
+
+Operand _parseRightOperand(String value) {
+  if (value.startsWith('"') && value.endsWith('"')) {
+    return StringLiteralOperand(value.substring(1, value.length - 1));
+  } else if (int.tryParse(value) != null) {
+    return NumberLiteralOperand(int.parse(value));
+  } else if (double.tryParse(value) != null) {
+    return NumberLiteralOperand(double.parse(value));
+  } else {
+    return ColumnReferenceOperand(value);
+  }
 }
 
 WhereCondition _parseCondition(String left, String operator, String right) {
   final leftOperand = ColumnReferenceOperand(left);
   final clauseOperator = _parseClauseOperator(operator);
   final rightOperand = _parseRightOperand(right);
-
   return WhereCondition(leftOperand, clauseOperator, rightOperand);
 }
 
@@ -122,17 +115,5 @@ ClauseOperator _parseClauseOperator(String operator) {
       return ClauseOperator.lessThan;
     default:
       throw FormatException('Unsupported clause operator: $operator');
-  }
-}
-
-Operand _parseRightOperand(String value) {
-  if (value.startsWith("'") && value.endsWith("'")) {
-    return StringLiteralOperand(value.substring(1, value.length - 1));
-  } else if (int.tryParse(value) != null) {
-    return NumberLiteralOperand(int.parse(value));
-  } else if (double.tryParse(value) != null) {
-    return NumberLiteralOperand(double.parse(value));
-  } else {
-    return ColumnReferenceOperand(value);
   }
 }

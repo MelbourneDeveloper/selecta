@@ -27,15 +27,27 @@ String statementToSQL(SelectStatement statement) {
 ///the key is only hooking into the platform specifics where necessary
 String toSQL(List<WhereClauseElement> where) => 'WHERE ${where.map(
       (element) => switch (element) {
-        (final WhereCondition condition) => '${condition.leftOperand}'
-            '${getClauseOperatorSymbol(condition.clauseOperator)}'
-            '${condition.rightOperand}',
+        (final WhereCondition condition) =>
+          '${_operandToString(condition.leftOperand)}'
+              '${getClauseOperatorSymbol(condition.clauseOperator)}'
+              '${_operandToString(condition.rightOperand)}',
         (final LogicalOperator logicalOperator) =>
           getLogicalOperatorSymbol(logicalOperator),
         (final GroupingOperator groupingOperator) =>
           getGroupingOperatorSymbol(groupingOperator),
       },
     ).join(' ')}';
+
+String _operandToString(Operand operand) {
+  if (operand is StringLiteralOperand) {
+    return '"${operand.value}"';
+  } else if (operand is NumberLiteralOperand) {
+    return operand.value.toString();
+  } else if (operand is ColumnReferenceOperand) {
+    return operand.value;
+  }
+  throw UnimplementedError('Unhandled operand type: ${operand.runtimeType}');
+}
 
 /// Converts a list of selected columns to a SQL SELECT clause
 String toSelectSQL(List<SelectedColumn> selectedColumns) =>
