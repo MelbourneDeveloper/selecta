@@ -55,22 +55,34 @@ List<String> _tokenizeWhere(String wherePart) {
 
 List<WhereClauseElement> _parseWhereClause(List<String> tokens) {
   final elements = <WhereClauseElement>[];
+  final stack = <List<WhereClauseElement>>[];
+  var current = elements;
+
   for (var i = 0; i < tokens.length; i++) {
     switch (tokens[i].toUpperCase()) {
       case 'AND':
-        elements.add(LogicalOperator.and);
+        current.add(LogicalOperator.and);
       case 'OR':
-        elements.add(LogicalOperator.or);
+        current.add(LogicalOperator.or);
       case '(':
+        stack.add(current);
+        current = [];
         elements.add(GroupingOperator.open);
       case ')':
-        elements.add(GroupingOperator.close);
+        if (stack.isNotEmpty) {
+          final groupedElements = current;
+          current = stack.removeLast()
+            ..addAll(groupedElements)
+            ..add(GroupingOperator.close);
+        } else {
+          throw const FormatException('Unmatched closing parenthesis');
+        }
       case '=':
       case '!=':
       case '>':
       case '<':
         if (i > 0 && i + 1 < tokens.length) {
-          elements.add(
+          current.add(
             _parseCondition(tokens[i - 1], tokens[i], tokens[i + 1]),
           );
           i++; // Skip the next token as it's part of this condition
@@ -79,10 +91,15 @@ List<WhereClauseElement> _parseWhereClause(List<String> tokens) {
         }
       default:
         // Skip other tokens (column names, values) as they're handled in the
-        // condition parsing
+        //condition parsing
         continue;
     }
   }
+
+  if (stack.isNotEmpty) {
+    throw const FormatException('Unmatched opening parenthesis');
+  }
+
   return elements;
 }
 
