@@ -1,17 +1,50 @@
 import 'package:dart_application_20/operand.dart';
 
+/// A type that represents a where clause element.
 sealed class WhereClauseElement {}
 
+/// A type that represents a where condition.
 final class WhereCondition implements WhereClauseElement {
-
+  /// Creates a new where condition.
   WhereCondition(this.leftOperand, this.clauseOperator, this.rightOperand);
+
+  /// The left operand of the condition.
   final Operand leftOperand;
+
+  /// The right operand of the condition.
   final Operand rightOperand;
+
+  /// The operator of the condition.
   final ClauseOperator clauseOperator;
 }
 
-enum ClauseOperator { equals, notEquals, greaterThan, lessThan }
+/// A type that represents a logical operator.
+enum ClauseOperator {
+  /// The equals operator.
+  equals,
 
-enum LogicalOperator implements WhereClauseElement { and, or }
+  /// The not equals operator.
+  notEquals,
 
-enum GroupingOperator implements WhereClauseElement { open, close }
+  /// The greater than operator.
+  greaterThan,
+
+  /// The greater than or equals operator.
+  lessThan,
+}
+
+/// A type that represents a logical operator.
+enum LogicalOperator implements WhereClauseElement {
+  /// The and operator.
+  and,
+  /// The or operator
+  or,
+}
+
+/// A type that represents a grouping operator.
+enum GroupingOperator implements WhereClauseElement {
+  /// The open grouping operator.
+  open,
+  /// The close grouping operator.
+  close,
+}
