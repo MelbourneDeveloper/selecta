@@ -9,6 +9,16 @@ final class AllColumns extends SelectedColumn {
   String toString() =>
       // ignore: no_runtimetype_tostring
       '$runtimeType (${tableName ?? '[All]'})';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AllColumns &&
+          runtimeType == other.runtimeType &&
+          tableName == other.tableName;
+
+  @override
+  int get hashCode => Object.hash('AllColumns', tableName);
 }
 
 final class ColumnReference extends SelectedColumn {
@@ -20,6 +30,17 @@ final class ColumnReference extends SelectedColumn {
   String toString() =>
       // ignore: no_runtimetype_tostring
       '$runtimeType (${tableName != null ? '$tableName.' : ''}$columnName)';
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ColumnReference &&
+          runtimeType == other.runtimeType &&
+          columnName == other.columnName &&
+          tableName == other.tableName;
+
+  @override
+  int get hashCode => Object.hash('ColumnReference', columnName, tableName);
 }
 
 class SelectStatementBuilder {
