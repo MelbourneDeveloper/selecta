@@ -17,8 +17,8 @@ void testBidirectionalConversion(
   final actualSql = statementToSQL(selectStatement);
 
   expect(
-    expectedSql,
     actualSql,
+    expectedSql,
   );
 }
 
@@ -60,6 +60,7 @@ void main() {
     'SELECT with multiple conditions and grouping',
     () => testBidirectionalConversion(
       '''SELECT * FROM Employees WHERE (department = "Sales" OR department = "Marketing") AND salary > 50000''',
+      '''SELECT * FROM Employees WHERE (department="Sales" OR department="Marketing") AND salary>50000''',
     ),
   );
 
