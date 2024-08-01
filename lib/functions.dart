@@ -13,7 +13,7 @@ String statementToSQL(SelectStatement statement) {
   }).join(', ');
 
   final whereClause =
-      statement.where.isNotEmpty ? ' WHERE ${toSQL(statement.where)}' : '';
+      statement.where.isNotEmpty ? ' ${toSQL(statement.where)}' : '';
 
   return 'SELECT $columns FROM ${statement.from}$whereClause';
 }
