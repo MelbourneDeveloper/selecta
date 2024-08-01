@@ -1,6 +1,6 @@
-import 'package:dart_application_20/functions.dart';
-import 'package:dart_application_20/model/model.dart';
-import 'package:dart_application_20/sql_parser.dart';
+import 'package:selecta/functions.dart';
+import 'package:selecta/model/model.dart';
+import 'package:selecta/sql_parser.dart';
 import 'package:test/test.dart';
 
 void testBidirectionalConversion(
@@ -132,7 +132,7 @@ void main() {
 
   //TODO: get this passing
   test(
-    'SELECT with WHERE clause mixing AND and OR without parentheses',
+    '🪲 - SELECT with WHERE clause mixing AND and OR without parentheses',
     () => testBidirectionalConversion(
       '''SELECT * FROM Customers WHERE country = "USA" AND (state = "California" OR state = "New York")''',
       '''SELECT * FROM Customers WHERE country="USA" AND (state="California" OR state="New York")''',

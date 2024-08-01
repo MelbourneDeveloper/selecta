@@ -1,6 +1,5 @@
-import 'package:dart_application_20/model/select_column.dart';
-import 'package:dart_application_20/model/where_clause_element.dart';
-import 'package:dart_application_20/sql_parser.dart';
+import 'package:selecta/model/model.dart';
+import 'package:selecta/sql_parser.dart';
 import 'package:test/test.dart';
 
 void main() {

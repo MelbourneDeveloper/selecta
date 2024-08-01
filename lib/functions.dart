@@ -1,5 +1,5 @@
-import 'package:dart_application_20/model/model.dart';
-import 'package:dart_application_20/where_clause_builder.dart';
+import 'package:selecta/model/model.dart';
+import 'package:selecta/where_clause_builder.dart';
 
 String statementToSQL(SelectStatement statement) {
   final columns = statement.select.map((col) {

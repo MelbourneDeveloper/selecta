@@ -1,7 +1,6 @@
-import 'package:dart_application_20/functions.dart';
-import 'package:dart_application_20/model/operand.dart';
-import 'package:dart_application_20/model/where_clause_element.dart';
-import 'package:dart_application_20/where_clause_builder.dart';
+import 'package:selecta/functions.dart';
+import 'package:selecta/model/model.dart';
+import 'package:selecta/where_clause_builder.dart';
 import 'package:test/test.dart';
 
 const name = ColumnReferenceOperand('NAME');
@@ -36,27 +35,27 @@ void main() {
     expect(sql, 'WHERE NAME="JIM" AND ( ID=123 OR ID=321 )');
   });
 
-test('Builder Go', () {
-  final builder = WhereClauseBuilder()
-    ..equalsText(
-      name,
-      'JIM',
-    )
-    ..and()
-    ..openBracket()
-    ..equalsNumber(
-      id,
-      123,
-    )
-    ..or()
-    ..equalsNumber(
-      id,
-      321,
-    )
-    ..closeBracket();
+  test('Builder Go', () {
+    final builder = WhereClauseBuilder()
+      ..equalsText(
+        name,
+        'JIM',
+      )
+      ..and()
+      ..openBracket()
+      ..equalsNumber(
+        id,
+        123,
+      )
+      ..or()
+      ..equalsNumber(
+        id,
+        321,
+      )
+      ..closeBracket();
 
-  final sql = toSQL(builder.build());
+    final sql = toSQL(builder.build());
 
-  expect(sql, 'WHERE NAME="JIM" AND ( ID=123 OR ID=321 )');
-});
+    expect(sql, 'WHERE NAME="JIM" AND ( ID=123 OR ID=321 )');
+  });
 }

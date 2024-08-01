@@ -1,4 +1,5 @@
-import 'package:dart_application_20/model/model.dart';
+
+import 'package:selecta/model/model.dart';
 
 SelectStatement toSelectStatement(String sqlText) {
   final parts = sqlText.split(' WHERE ');
