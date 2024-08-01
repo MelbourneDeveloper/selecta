@@ -51,8 +51,14 @@ enum ClauseOperator {
   /// The greater than operator.
   greaterThan,
 
+  /// The greater than or equal to operator.
+  greaterThanEqualTo,
+
   /// The greater than or equals operator.
   lessThan,
+
+  /// The less than or equals operator.
+  lessThanEqualTo,
 }
 
 /// A type that represents a logical operator.

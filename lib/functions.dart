@@ -68,7 +68,9 @@ String getClauseOperatorSymbol(ClauseOperator clauseOperator) =>
       ClauseOperator.equals => '=',
       ClauseOperator.notEquals => '!=',
       ClauseOperator.greaterThan => '>',
+      ClauseOperator.greaterThanEqualTo => '>=',
       ClauseOperator.lessThan => '<',
+      ClauseOperator.lessThanEqualTo => '<=',
     };
 
 /// Converts a [GroupingOperator] to a SQL grouping operator symbol.

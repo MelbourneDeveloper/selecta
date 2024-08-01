@@ -108,8 +108,12 @@ ClauseOperator _parseClauseOperator(String operator) {
       return ClauseOperator.notEquals;
     case '>':
       return ClauseOperator.greaterThan;
+    case '>=':
+      return ClauseOperator.greaterThanEqualTo;
     case '<':
       return ClauseOperator.lessThan;
+    case '<=':
+      return ClauseOperator.lessThanEqualTo;
     default:
       throw FormatException('Unsupported clause operator: $operator');
   }
