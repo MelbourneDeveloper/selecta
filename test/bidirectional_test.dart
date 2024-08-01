@@ -47,6 +47,7 @@ void main() {
         (ss) {
       expect(ss.where.length, 3);
       expect(ss.where.first, isA<WhereCondition>());
+      expect(ss.from, 'Products');
     }),
   );
 
@@ -54,6 +55,7 @@ void main() {
     'Complex SELECT with JOIN and WHERE',
     () => testBidirectionalConversion(
       ''''SELECT Orders.id, Customers.name FROM Orders JOIN Customers ON Orders.customer_id = Customers.id WHERE Orders.status = "Shipped"''',
+      '''SELECT T Orders.id, Customers.name FROM Orders JOIN Customers ON Orders.customer_id = Customers.id WHERE Ordersstatus="Shipped"''',
     ),
   );
 
