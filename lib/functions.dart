@@ -1,8 +1,5 @@
-import 'package:dart_application_20/operand.dart';
-import 'package:dart_application_20/select_statement.dart';
-import 'package:dart_application_20/select_statement_builder.dart';
+import 'package:dart_application_20/model/model.dart';
 import 'package:dart_application_20/where_clause_builder.dart';
-import 'package:dart_application_20/where_clause_element.dart';
 
 String statementToSQL(SelectStatement statement) {
   final columns = statement.select.map((col) {
@@ -15,9 +12,8 @@ String statementToSQL(SelectStatement statement) {
     throw UnimplementedError('Unhandled column type: ${col.runtimeType}');
   }).join(', ');
 
-  final whereClause = statement.where.isNotEmpty
-      ? ' WHERE ${toSQL(statement.where)}'
-      : '';
+  final whereClause =
+      statement.where.isNotEmpty ? ' WHERE ${toSQL(statement.where)}' : '';
 
   return 'SELECT $columns FROM ${statement.from}$whereClause';
 }

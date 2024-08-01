@@ -1,4 +1,5 @@
 
+
 /// Represents an operand in a SQL expression.
 sealed class Operand {}
 

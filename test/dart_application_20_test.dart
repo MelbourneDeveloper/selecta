@@ -1,7 +1,7 @@
 import 'package:dart_application_20/functions.dart';
-import 'package:dart_application_20/operand.dart';
+import 'package:dart_application_20/model/operand.dart';
+import 'package:dart_application_20/model/where_clause_element.dart';
 import 'package:dart_application_20/where_clause_builder.dart';
-import 'package:dart_application_20/where_clause_element.dart';
 import 'package:test/test.dart';
 
 const name = ColumnReferenceOperand('NAME');

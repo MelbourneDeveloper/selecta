@@ -1,7 +1,4 @@
-import 'package:dart_application_20/operand.dart';
-import 'package:dart_application_20/select_statement.dart';
-import 'package:dart_application_20/select_statement_builder.dart';
-import 'package:dart_application_20/where_clause_element.dart';
+import 'package:dart_application_20/model/model.dart';
 
 SelectStatement toSelectStatement(String sqlText) {
   final parts = sqlText.split(' WHERE ');

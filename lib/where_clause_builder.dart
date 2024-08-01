@@ -1,5 +1,5 @@
-import 'package:dart_application_20/operand.dart';
-import 'package:dart_application_20/where_clause_element.dart';
+import 'package:dart_application_20/model/operand.dart';
+import 'package:dart_application_20/model/where_clause_element.dart';
 
 class WhereClauseBuilder {
   final List<WhereClauseElement> _whereClause = [];

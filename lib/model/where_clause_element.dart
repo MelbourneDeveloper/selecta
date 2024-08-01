@@ -1,5 +1,5 @@
 import 'package:dart_application_20/functions.dart';
-import 'package:dart_application_20/operand.dart';
+import 'package:dart_application_20/model/operand.dart';
 
 /// A type that represents a where clause element.
 sealed class WhereClauseElement {}

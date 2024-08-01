@@ -1,5 +1,5 @@
 import 'package:dart_application_20/functions.dart';
-import 'package:dart_application_20/select_statement_builder.dart';
+import 'package:dart_application_20/model/select_column.dart';
 import 'package:test/test.dart';
 
 void main() {

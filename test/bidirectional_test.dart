@@ -1,8 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:dart_application_20/functions.dart';
-import 'package:dart_application_20/select_statement_builder.dart';
+import 'package:dart_application_20/model/model.dart';
 import 'package:dart_application_20/sql_parser.dart';
-import 'package:dart_application_20/where_clause_element.dart';
 import 'package:test/test.dart';
 
 const listEquality = ListEquality<SelectedColumn>();
