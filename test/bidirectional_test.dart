@@ -1,13 +1,20 @@
 import 'package:dart_application_20/functions.dart';
+import 'package:dart_application_20/model/model.dart';
 import 'package:dart_application_20/sql_parser.dart';
 import 'package:test/test.dart';
 
-void testBidirectionalConversion(String sql, [String? expectedSql]) {
+void testBidirectionalConversion(
+  String sql, [
+  String? expectedSql,
+  void Function(SelectStatement)? validateStatement,
+]) {
   expectedSql ??= sql;
 
-  final statement1 = toSelectStatement(sql);
+  final selectStatement = toSelectStatement(sql);
 
-  final actualSql = statementToSQL(statement1);
+  validateStatement?.call(selectStatement);
+
+  final actualSql = statementToSQL(selectStatement);
 
   expect(
     expectedSql,
@@ -34,9 +41,12 @@ void main() {
   test(
     'SELECT with WHERE clause',
     () => testBidirectionalConversion(
-      '''SELECT * FROM Products WHERE category = "Electronics" AND price > 100''',
-      '''SELECT * FROM Products WHERE category="Electronics" AND price>100''',
-    ),
+        '''SELECT * FROM Products WHERE category = "Electronics" AND price > 100''',
+        '''SELECT * FROM Products WHERE category="Electronics" AND price>100''',
+        (ss) {
+      expect(ss.where.length, 3);
+      expect(ss.where.first, isA<WhereCondition>());
+    }),
   );
 
   test(
