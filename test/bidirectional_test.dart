@@ -68,6 +68,85 @@ void main() {
     ),
   );
 
+  test(
+    'SELECT with multiple table-qualified columns',
+    () => testBidirectionalConversion(
+      'SELECT Users.id, Users.name, Users.email FROM Users',
+    ),
+  );
+
+  test(
+    'SELECT with mixed qualified and unqualified columns',
+    () => testBidirectionalConversion(
+      'SELECT Users.id, name, Users.email FROM Users',
+    ),
+  );
+
+  test(
+    'SELECT with WHERE clause using NOT EQUALS',
+    () => testBidirectionalConversion(
+      'SELECT * FROM Products WHERE category != "Clothing"',
+      'SELECT * FROM Products WHERE category!="Clothing"',
+    ),
+  );
+
+  test(
+    'SELECT with WHERE clause using LESS THAN',
+    () => testBidirectionalConversion(
+      'SELECT name, price FROM Products WHERE price < 50',
+      'SELECT name, price FROM Products WHERE price<50',
+    ),
+  );
+
+  test(
+    'SELECT with WHERE clause using GREATER THAN OR EQUAL TO',
+    () => testBidirectionalConversion(
+      'SELECT * FROM Employees WHERE hire_date >= "2023-01-01"',
+      'SELECT * FROM Employees WHERE hire_date>="2023-01-01"',
+    ),
+  );
+
+  test(
+    'SELECT with complex WHERE clause using multiple operators',
+    () => testBidirectionalConversion(
+      '''SELECT * FROM Orders WHERE status = "Pending" AND total > 100 AND date < "2024-01-01"''',
+      '''SELECT * FROM Orders WHERE status="Pending" AND total>100 AND date<"2024-01-01"''',
+    ),
+  );
+
+  test(
+    'SELECT with WHERE clause using nested parentheses',
+    () => testBidirectionalConversion(
+      '''SELECT * FROM Products WHERE (category = "Electronics" AND price > 500) OR (category = "Books" AND price < 20)''',
+      '''SELECT * FROM Products WHERE (category="Electronics" AND price>500) OR (category="Books" AND price<20)''',
+    ),
+  );
+
+  test(
+    'SELECT with WHERE clause using multiple OR conditions',
+    () => testBidirectionalConversion(
+      '''SELECT name, department FROM Employees WHERE department = "Sales" OR department = "Marketing" OR department = "IT"''',
+      '''SELECT name, department FROM Employees WHERE department="Sales" OR department="Marketing" OR department="IT"''',
+    ),
+  );
+
+  //TODO: get this passing
+  test(
+    'SELECT with WHERE clause mixing AND and OR without parentheses',
+    () => testBidirectionalConversion(
+      '''SELECT * FROM Customers WHERE country = "USA" AND (state = "California" OR state = "New York")''',
+      '''SELECT * FROM Customers WHERE country="USA" AND (state="California" OR state="New York")''',
+    ),
+  );
+
+  test(
+    'SELECT with WHERE clause using numeric comparisons',
+    () => testBidirectionalConversion(
+      '''SELECT product_name, stock_quantity FROM Inventory WHERE stock_quantity > 0 AND stock_quantity <= 100''',
+      '''SELECT product_name, stock_quantity FROM Inventory WHERE stock_quantity>0 AND stock_quantity<=100''',
+    ),
+  );
+
   //TODO:
   // test(
   //   'Complex SELECT with JOIN and WHERE',
