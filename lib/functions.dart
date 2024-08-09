@@ -2,48 +2,79 @@ import 'package:selecta/model/model.dart';
 import 'package:selecta/where_clause_builder.dart';
 
 String statementToSQL(SelectStatement statement) {
-  final columns = statement.select.map((col) {
-    if (col is AllColumns) return '*';
-    if (col is ColumnReference) {
+  final selectClause = statement.select.map((col) {
+    if (col is AllColumns) {
+      return col.tableName != null ? '${col.tableName}.*' : '*';
+    } else if (col is ColumnReference) {
       return col.tableName != null
           ? '${col.tableName}.${col.columnName}'
           : col.columnName;
     }
-    throw UnimplementedError('Unhandled column type: ${col.runtimeType}');
+    throw ArgumentError('Unknown SelectedColumn type');
   }).join(', ');
 
-  final whereClause =
-      statement.where.isNotEmpty ? ' ${toSQL(statement.where)}' : '';
+  final whereClause = whereClauseGroupToSQL(statement.where);
 
-  return 'SELECT $columns FROM ${statement.from}$whereClause';
+  return 'SELECT $selectClause FROM '
+      '${statement.from}${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}';
 }
 
-///This is an oversimplication. It may be slightly different for each
-///db platform. However, it will be mostly the same for each platform and
-///the key is only hooking into the platform specifics where necessary
-String toSQL(List<WhereClauseElement> where) => 'WHERE ${where.map(
+String whereClauseGroupToSQL(WhereClauseGroup group) {
+  final parts = <String>[];
+  for (final element in group.elements) {
+    if (element is WhereCondition) {
+      parts.add(conditionToSQL(element));
+    } else if (element is LogicalOperator) {
+      parts.add(element.name.toUpperCase());
+    } else if (element is WhereClauseGroup) {
+      parts.add('(${whereClauseGroupToSQL(element)})');
+    }
+  }
+  return parts.join(' ');
+}
+
+String conditionToSQL(WhereCondition condition) {
+  final operator = getClauseOperatorSymbol(condition.clauseOperator);
+  return '${condition.leftOperand}$operator${condition.rightOperand}';
+}
+
+String getClauseOperatorSymbol(ClauseOperator op) => switch (op) {
+      ClauseOperator.equals => '=',
+      ClauseOperator.notEquals => '!=',
+      ClauseOperator.greaterThan => '>',
+      ClauseOperator.greaterThanEqualTo => '>=',
+      ClauseOperator.lessThan => '<',
+      ClauseOperator.lessThanEqualTo => '<=',
+    };
+
+/// This is an oversimplification. It may be slightly different for each
+/// db platform. However, it will be mostly the same for each platform and
+/// the key is only hooking into the platform specifics where necessary
+String toSQL(List<WhereClauseElement> where) =>
+    'WHERE ${_whereElementsToString(where)}';
+
+String _whereElementsToString(List<WhereClauseElement> elements) => elements
+    .map(
       (element) => switch (element) {
-        (final WhereCondition condition) =>
+        final WhereCondition condition =>
           '${_operandToString(condition.leftOperand)}'
               '${getClauseOperatorSymbol(condition.clauseOperator)}'
               '${_operandToString(condition.rightOperand)}',
-        (final LogicalOperator logicalOperator) =>
+        final LogicalOperator logicalOperator =>
           getLogicalOperatorSymbol(logicalOperator),
-        (final GroupingOperator groupingOperator) =>
+        final GroupingOperator groupingOperator =>
           getGroupingOperatorSymbol(groupingOperator),
+        final WhereClauseGroup group =>
+          '(${_whereElementsToString(group.elements)})',
       },
-    ).join(' ')}';
+    )
+    .join(' ');
 
-String _operandToString(Operand operand) {
-  if (operand is StringLiteralOperand) {
-    return '"${operand.value}"';
-  } else if (operand is NumberLiteralOperand) {
-    return operand.value.toString();
-  } else if (operand is ColumnReferenceOperand) {
-    return operand.value;
-  }
-  throw UnimplementedError('Unhandled operand type: ${operand.runtimeType}');
-}
+String _operandToString(Operand operand) => switch (operand) {
+      final StringLiteralOperand strLiteral => '"${strLiteral.value}"',
+      final NumberLiteralOperand numLiteral => numLiteral.value.toString(),
+      final ColumnReferenceOperand colRef => colRef.value,
+    };
 
 /// Converts a list of selected columns to a SQL SELECT clause
 String toSelectSQL(List<SelectedColumn> selectedColumns) =>
@@ -62,27 +93,14 @@ String _columnReferenceToString(ColumnReference columnReference) =>
     '${columnReference.tableName != null ? '${columnReference.tableName}'
         '.' : ''}${columnReference.columnName}';
 
-/// Converts a [ClauseOperator] to a SQL operator symbol.
-String getClauseOperatorSymbol(ClauseOperator clauseOperator) =>
-    switch (clauseOperator) {
-      ClauseOperator.equals => '=',
-      ClauseOperator.notEquals => '!=',
-      ClauseOperator.greaterThan => '>',
-      ClauseOperator.greaterThanEqualTo => '>=',
-      ClauseOperator.lessThan => '<',
-      ClauseOperator.lessThanEqualTo => '<=',
-    };
-
 /// Converts a [GroupingOperator] to a SQL grouping operator symbol.
-String getGroupingOperatorSymbol(GroupingOperator groupingOperator) =>
-    switch (groupingOperator) {
+String getGroupingOperatorSymbol(GroupingOperator op) => switch (op) {
       GroupingOperator.open => '(',
       GroupingOperator.close => ')',
     };
 
 /// Converts a [LogicalOperator] to a SQL logical operator symbol.
-String getLogicalOperatorSymbol(LogicalOperator logicalOperator) =>
-    switch (logicalOperator) {
+String getLogicalOperatorSymbol(LogicalOperator op) => switch (op) {
       LogicalOperator.and => 'AND',
       LogicalOperator.or => 'OR',
     };

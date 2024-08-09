@@ -5,3 +5,5 @@
 lib/log/
 
 lib/metadata.json
+
+.DS_Store

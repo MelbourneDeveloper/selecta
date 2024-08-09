@@ -1,108 +1,155 @@
-
 import 'package:selecta/model/model.dart';
 
-SelectStatement toSelectStatement(String sqlText) {
-  final parts = sqlText.split(' WHERE ');
-  final selectPart = parts[0].trim();
-  final wherePart = parts.length > 1 ? parts[1].trim() : null;
+SelectStatement toSelectStatement(String sql) {
+  // Remove any leading/trailing whitespace and ensure the statement ends with a semicolon
+  // ignore: parameter_assignments
+  sql = sql.trim();
+  if (!sql.endsWith(';')) {
+    // ignore: parameter_assignments
+    sql += ';';
+  }
 
-  // Parse SELECT part
-  final selectClause = selectPart.substring(6).trim(); // Remove "SELECT "
-  final fromIndex = selectClause.toUpperCase().indexOf(' FROM ');
-  final columns =
-      selectClause.substring(0, fromIndex).split(',').map((col) => col.trim());
-  final fromClause =
-      selectClause.substring(fromIndex + 6).trim(); // Remove " FROM "
+  // Split the SQL statement into its main components
+  final selectIndex = sql.indexOf('SELECT');
+  final fromIndex = sql.indexOf('FROM');
+  final whereIndex = sql.indexOf('WHERE');
+  final endIndex = sql.indexOf(';');
 
-  final selectedColumns = <SelectedColumn>[];
-  for (final column in columns) {
-    if (column == '*') {
-      selectedColumns.add(AllColumns());
+  if (selectIndex == -1 || fromIndex == -1) {
+    throw const FormatException(
+      'Invalid SQL statement: SELECT and FROM clauses are required',
+    );
+  }
+
+  // Parse the SELECT clause
+  final selectClause = sql.substring(selectIndex + 6, fromIndex).trim();
+  final selectedColumns = parseSelectedColumns(selectClause);
+
+  // Parse the FROM clause
+  final fromClause = whereIndex == -1
+      ? sql.substring(fromIndex + 4, endIndex).trim()
+      : sql.substring(fromIndex + 4, whereIndex).trim();
+
+  // Parse the WHERE clause if it exists
+  WhereClauseGroup whereClause;
+  if (whereIndex != -1) {
+    final whereClauseString = sql.substring(whereIndex + 5, endIndex).trim();
+    whereClause = parseWhereClause(whereClauseString);
+  } else {
+    whereClause = WhereClauseGroup([]);
+  }
+
+  return SelectStatement(
+    fromClause,
+    selectedColumns,
+    where: whereClause,
+  );
+}
+
+List<SelectedColumn> parseSelectedColumns(String selectClause) {
+  final columns = selectClause.split(',').map((col) => col.trim()).toList();
+  return columns.map((col) {
+    if (col == '*') {
+      return AllColumns();
+    } else if (col.contains('.')) {
+      final parts = col.split('.');
+      return ColumnReference(parts[1], tableName: parts[0]);
     } else {
-      final parts = column.split('.');
-      if (parts.length == 2) {
-        selectedColumns.add(ColumnReference(parts[1], tableName: parts[0]));
-      } else {
-        selectedColumns.add(ColumnReference(parts[0]));
-      }
+      return ColumnReference(col);
+    }
+  }).toList();
+}
+
+WhereClauseGroup parseWhereClause(String whereClause) {
+  final elements = <WhereClauseElement>[];
+  final tokens = tokenizeWhereClause(whereClause);
+
+  for (var i = 0; i < tokens.length; i++) {
+    if (tokens[i] == '(') {
+      final closingIndex = findClosingParenthesis(tokens, i);
+      elements
+          .add(parseWhereClause(tokens.sublist(i + 1, closingIndex).join(' ')));
+      i = closingIndex;
+    } else if (tokens[i].toUpperCase() == 'AND' ||
+        tokens[i].toUpperCase() == 'OR') {
+      elements.add(
+        tokens[i].toUpperCase() == 'AND'
+            ? LogicalOperator.and
+            : LogicalOperator.or,
+      );
+    } else {
+      // Find the next logical operator or end of clause
+      final nextLogicalOpIndex = tokens.indexWhere(
+        (t) => t.toUpperCase() == 'AND' || t.toUpperCase() == 'OR',
+        i + 1,
+      );
+      final conditionEndIndex =
+          nextLogicalOpIndex == -1 ? tokens.length : nextLogicalOpIndex;
+
+      // Parse the condition
+      elements.add(parseCondition(tokens.sublist(i, conditionEndIndex)));
+
+      // Move the index to the end of this condition
+      i = conditionEndIndex - 1;
     }
   }
 
-  // Parse WHERE part
-  final where = <WhereClauseElement>[];
-  if (wherePart != null) {
-    final tokens = _tokenizeWhere(wherePart);
-    where.addAll(_parseWhereClause(tokens));
-  }
-
-  return SelectStatement(fromClause, selectedColumns, where: where);
+  return WhereClauseGroup(elements);
 }
 
-List<String> _tokenizeWhere(String wherePart) {
-  final regex =
-      RegExp(r'''\s+|\(|\)|=|!=|>|<|AND|OR|"[^"]*"|'[^']*'|\d+(\.\d+)?|\w+''');
-  return wherePart
+List<String> tokenizeWhereClause(String whereClause) {
+  // Split the where clause into tokens, preserving quoted strings
+  final regex = RegExp(r'''(\s+)|("[^"]*")|('[^']*')|([!<>=]+)''');
+  return whereClause
       .splitMapJoin(
         regex,
-        onMatch: (m) => '${m.group(0)}',
-        onNonMatch: (s) => '',
+        onMatch: (m) =>
+            '${m.group(2) ?? ''}${m.group(3) ?? ''}${m.group(4) ?? ''} ',
+        onNonMatch: (s) => '$s ',
       )
-      .split(' ')
-      .where((s) => s.isNotEmpty)
-      .toList();
+      .trim()
+      .split(RegExp(r'\s+'));
 }
 
-List<WhereClauseElement> _parseWhereClause(List<String> tokens) {
-  final elements = <WhereClauseElement>[];
-  for (var i = 0; i < tokens.length; i++) {
-    switch (tokens[i].toUpperCase()) {
-      case 'AND':
-        elements.add(LogicalOperator.and);
-      case 'OR':
-        elements.add(LogicalOperator.or);
-      case '(':
-        elements.add(GroupingOperator.open);
-      case ')':
-        elements.add(GroupingOperator.close);
-      default:
-        if (i + 2 < tokens.length) {
-          if (_isClauseOperator(tokens[i + 1])) {
-            elements.add(
-              _parseCondition(tokens[i], tokens[i + 1], tokens[i + 2]),
-            );
-            i +=
-                2; // Skip the next two tokens as they're part of this condition
-          }
-        }
-    }
+int findClosingParenthesis(List<String> tokens, int openIndex) {
+  var count = 1;
+  for (var i = openIndex + 1; i < tokens.length; i++) {
+    if (tokens[i] == '(') count++;
+    if (tokens[i] == ')') count--;
+    if (count == 0) return i;
   }
-  return elements;
+  throw const FormatException('Mismatched parentheses');
 }
 
-bool _isClauseOperator(String token) =>
-    ['=', '!=', '>', '<', '>=', '<='].contains(token);
-
-Operand _parseRightOperand(String value) {
-  if (value.startsWith('"') && value.endsWith('"')) {
-    return StringLiteralOperand(value.substring(1, value.length - 1));
-  } else if (int.tryParse(value) != null) {
-    return NumberLiteralOperand(int.parse(value));
-  } else if (double.tryParse(value) != null) {
-    return NumberLiteralOperand(double.parse(value));
-  } else {
-    return ColumnReferenceOperand(value);
+WhereCondition parseCondition(List<String> conditionTokens) {
+  if (conditionTokens.length < 3) {
+    throw FormatException(
+      'Invalid condition format: ${conditionTokens.join(' ')}',
+    );
   }
+
+  final operatorIndex = conditionTokens
+      .indexWhere((t) => ['=', '!=', '>', '>=', '<', '<='].contains(t));
+
+  if (operatorIndex == -1) {
+    throw FormatException(
+      'No valid operator found in condition: ${conditionTokens.join(' ')}',
+    );
+  }
+
+  final leftOperand = conditionTokens.sublist(0, operatorIndex).join(' ');
+  final operator = conditionTokens[operatorIndex];
+  final rightOperand = conditionTokens.sublist(operatorIndex + 1).join(' ');
+
+  return WhereCondition(
+    parseOperand(leftOperand),
+    parseOperator(operator),
+    parseOperand(rightOperand),
+  );
 }
 
-WhereCondition _parseCondition(String left, String operator, String right) {
-  final leftOperand = ColumnReferenceOperand(left);
-  final clauseOperator = _parseClauseOperator(operator);
-  final rightOperand = _parseRightOperand(right);
-  return WhereCondition(leftOperand, clauseOperator, rightOperand);
-}
-
-ClauseOperator _parseClauseOperator(String operator) {
-  switch (operator) {
+ClauseOperator parseOperator(String op) {
+  switch (op) {
     case '=':
       return ClauseOperator.equals;
     case '!=':
@@ -116,6 +163,67 @@ ClauseOperator _parseClauseOperator(String operator) {
     case '<=':
       return ClauseOperator.lessThanEqualTo;
     default:
-      throw FormatException('Unsupported clause operator: $operator');
+      throw FormatException('Unknown operator: $op');
+  }
+}
+
+Operand parseOperand(String value) {
+  if (value.startsWith('"') && value.endsWith('"')) {
+    return StringLiteralOperand(value.substring(1, value.length - 1));
+  }
+  if (value.startsWith("'") && value.endsWith("'")) {
+    return StringLiteralOperand(value.substring(1, value.length - 1));
+  }
+  if (num.tryParse(value) != null) {
+    return NumberLiteralOperand(num.parse(value));
+  }
+  return ColumnReferenceOperand(value);
+}
+
+String whereClauseGroupToSQL(WhereClauseGroup group) {
+  final parts = <String>[];
+  for (final element in group.elements) {
+    if (element is WhereCondition) {
+      parts.add(conditionToSQL(element));
+    } else if (element is LogicalOperator) {
+      parts.add(element.name.toUpperCase());
+    } else if (element is WhereClauseGroup) {
+      parts.add('(${whereClauseGroupToSQL(element)})');
+    }
+  }
+  return parts.join(' ');
+}
+
+String conditionToSQL(WhereCondition condition) {
+  final operator = clauseOperatorToStringSymbol(condition.clauseOperator);
+  return '${operandToSQL(condition.leftOperand)}'
+      '$operator${operandToSQL(condition.rightOperand)}';
+}
+
+String operandToSQL(Operand operand) {
+  if (operand is StringLiteralOperand) {
+    return '"${operand.value}"';
+  } else if (operand is NumberLiteralOperand) {
+    return operand.value.toString();
+  } else if (operand is ColumnReferenceOperand) {
+    return operand.value;
+  }
+  throw ArgumentError('Unknown Operand type');
+}
+
+String clauseOperatorToStringSymbol(ClauseOperator op) {
+  switch (op) {
+    case ClauseOperator.equals:
+      return '=';
+    case ClauseOperator.notEquals:
+      return '!=';
+    case ClauseOperator.greaterThan:
+      return '>';
+    case ClauseOperator.greaterThanEqualTo:
+      return '>=';
+    case ClauseOperator.lessThan:
+      return '<';
+    case ClauseOperator.lessThanEqualTo:
+      return '<=';
   }
 }

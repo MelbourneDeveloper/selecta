@@ -1,6 +1,4 @@
-
 import 'package:selecta/model/model.dart';
-
 
 class SelectStatement {
   SelectStatement(
@@ -9,7 +7,7 @@ class SelectStatement {
     required this.where,
   });
 
-  final List<WhereClauseElement> where;
+  final WhereClauseGroup where;
   final List<SelectedColumn> select;
   final String from;
 

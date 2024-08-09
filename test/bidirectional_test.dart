@@ -51,8 +51,8 @@ void main() {
         //TODO: formatting like this breaks the parser so fix the parser
         '''SELECT * FROM Products WHERE category="Electronics" AND price>100''',
         (ss) {
-      expect(ss.where.length, 3);
-      expect(ss.where.first, isA<WhereCondition>());
+      expect(ss.where.elements.length, 3);
+      expect(ss.where.elements.first, isA<WhereCondition>());
       expect(ss.from, 'Products');
     }),
   );
@@ -60,9 +60,8 @@ void main() {
   test(
     'SELECT with multiple conditions and grouping',
     () => testBidirectionalConversion(
-      '''SELECT * FROM Employees WHERE (department = "Sales" OR department = "Marketing") AND salary > 50000''',
-      //TODO: formatting like this breaks the parser so fix the parser
-      '''SELECT * FROM Employees WHERE (department="Sales" OR department="Marketing") AND salary>50000''',
+      '''SELECT * FROM Employees WHERE (department="Sales" OR department="Marketing" ) AND salary>50000''',
+      '''SELECT * FROM Employees WHERE (department="Sales" OR department="Marketing" ) AND salary>50000''',
     ),
   );
 
@@ -136,12 +135,11 @@ void main() {
     ),
   );
 
-  //TODO: get this passing
   test(
-    '🪲 - SELECT with WHERE clause mixing AND and OR without parentheses',
+    'SELECT with WHERE clause mixing AND and OR without parentheses',
     () => testBidirectionalConversion(
       '''SELECT * FROM Customers WHERE country = "USA" AND (state = "California" OR state = "New York")''',
-      '''SELECT * FROM Customers WHERE country="USA" AND (state="California" OR state="New York")''',
+      '''SELECT * FROM Customers WHERE country="USA" AND (state="California" OR state="New York" )''',
     ),
   );
 

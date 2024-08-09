@@ -17,14 +17,14 @@ void main() {
 
       expect(result.select.length, expectedColumnCount);
       expect(result.from, expectedFrom);
-      expect(result.where.isEmpty, expectedWhereEmpty);
+      expect(result.where.elements.isEmpty, expectedWhereEmpty);
 
       if (validateColumns != null) {
         validateColumns(result.select);
       }
 
       if (validateWhere != null) {
-        validateWhere(result.where);
+        validateWhere(result.where.elements);
       }
     });
   }

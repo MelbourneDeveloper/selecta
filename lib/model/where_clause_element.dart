@@ -1,4 +1,3 @@
-
 import 'package:selecta/functions.dart';
 import 'package:selecta/model/operand.dart';
 
@@ -21,9 +20,7 @@ final class WhereCondition implements WhereClauseElement {
 
   @override
   String toString() =>
-      // ignore: no_runtimetype_tostring
-      '$runtimeType $leftOperand ${getClauseOperatorSymbol(clauseOperator)}'
-      ' $rightOperand';
+      '$leftOperand ${getClauseOperatorSymbol(clauseOperator)} $rightOperand';
 
   @override
   bool operator ==(Object other) =>
@@ -78,4 +75,23 @@ enum GroupingOperator implements WhereClauseElement {
 
   /// The close grouping operator.
   close,
+}
+
+/// A type that represents a group of where clause elements.
+final class WhereClauseGroup implements WhereClauseElement {
+  WhereClauseGroup(this.elements);
+
+  final List<WhereClauseElement> elements;
+
+  @override
+  String toString() => '(${elements.join(' ')})';
+
+  @override
+  bool operator ==(Object other) =>
+      other is WhereClauseGroup &&
+      elements.length == other.elements.length &&
+      elements.every((element) => other.elements.contains(element));
+
+  @override
+  int get hashCode => Object.hash(runtimeType, Object.hashAll(elements));
 }

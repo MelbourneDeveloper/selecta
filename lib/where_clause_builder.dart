@@ -1,4 +1,3 @@
-
 import 'package:selecta/model/model.dart';
 
 class WhereClauseBuilder {
