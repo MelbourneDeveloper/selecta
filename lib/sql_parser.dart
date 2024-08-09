@@ -1,5 +1,6 @@
 import 'package:selecta/model/model.dart';
 
+/// Converts a list of [SelectedColumn]s to a SQL SELECT statement.
 SelectStatement toSelectStatement(String sql) {
   // Remove any leading/trailing whitespace and ensure the statement ends with a semicolon
   // ignore: parameter_assignments
@@ -46,6 +47,8 @@ SelectStatement toSelectStatement(String sql) {
   );
 }
 
+/// Converts the selected columns part of a [SelectStatement] to a list
+/// of [SelectedColumn] objects.
 List<SelectedColumn> parseSelectedColumns(String selectClause) {
   final columns = selectClause.split(',').map((col) => col.trim()).toList();
   return columns.map((col) {
@@ -60,13 +63,14 @@ List<SelectedColumn> parseSelectedColumns(String selectClause) {
   }).toList();
 }
 
+/// Converts a [SelectStatement] to a SQL SELECT statement.
 WhereClauseGroup parseWhereClause(String whereClause) {
   final elements = <WhereClauseElement>[];
   final tokens = tokenizeWhereClause(whereClause);
 
   for (var i = 0; i < tokens.length; i++) {
     if (tokens[i] == '(') {
-      final closingIndex = findClosingParenthesis(tokens, i);
+      final closingIndex = _findClosingParenthesis(tokens, i);
       elements
           .add(parseWhereClause(tokens.sublist(i + 1, closingIndex).join(' ')));
       i = closingIndex;
@@ -97,6 +101,7 @@ WhereClauseGroup parseWhereClause(String whereClause) {
   return WhereClauseGroup(elements);
 }
 
+/// Tokenizes a where clause string into individual tokens.
 List<String> tokenizeWhereClause(String whereClause) {
   // Split the where clause into tokens, preserving quoted strings
   final regex = RegExp(r'''(\s+)|("[^"]*")|('[^']*')|([!<>=]+)''');
@@ -111,7 +116,9 @@ List<String> tokenizeWhereClause(String whereClause) {
       .split(RegExp(r'\s+'));
 }
 
-int findClosingParenthesis(List<String> tokens, int openIndex) {
+/// Finds the index of the closing parenthesis for an open parenthesis at
+/// [openIndex].
+int _findClosingParenthesis(List<String> tokens, int openIndex) {
   var count = 1;
   for (var i = openIndex + 1; i < tokens.length; i++) {
     if (tokens[i] == '(') count++;
@@ -121,6 +128,7 @@ int findClosingParenthesis(List<String> tokens, int openIndex) {
   throw const FormatException('Mismatched parentheses');
 }
 
+/// Parses a list of tokens into a [WhereCondition].
 WhereCondition parseCondition(List<String> conditionTokens) {
   if (conditionTokens.length < 3) {
     throw FormatException(
@@ -142,13 +150,14 @@ WhereCondition parseCondition(List<String> conditionTokens) {
   final rightOperand = conditionTokens.sublist(operatorIndex + 1).join(' ');
 
   return WhereCondition(
-    parseOperand(leftOperand),
-    parseOperator(operator),
-    parseOperand(rightOperand),
+    _parseOperand(leftOperand),
+    _parseOperator(operator),
+    _parseOperand(rightOperand),
   );
 }
 
-ClauseOperator parseOperator(String op) {
+///
+ClauseOperator _parseOperator(String op) {
   switch (op) {
     case '=':
       return ClauseOperator.equals;
@@ -167,7 +176,8 @@ ClauseOperator parseOperator(String op) {
   }
 }
 
-Operand parseOperand(String value) {
+/// Parses a string value into an [Operand].
+Operand _parseOperand(String value) {
   if (value.startsWith('"') && value.endsWith('"')) {
     return StringLiteralOperand(value.substring(1, value.length - 1));
   }
@@ -180,27 +190,15 @@ Operand parseOperand(String value) {
   return ColumnReferenceOperand(value);
 }
 
-String whereClauseGroupToSQL(WhereClauseGroup group) {
-  final parts = <String>[];
-  for (final element in group.elements) {
-    if (element is WhereCondition) {
-      parts.add(conditionToSQL(element));
-    } else if (element is LogicalOperator) {
-      parts.add(element.name.toUpperCase());
-    } else if (element is WhereClauseGroup) {
-      parts.add('(${whereClauseGroupToSQL(element)})');
-    }
-  }
-  return parts.join(' ');
-}
-
+/// Converts a [WhereClauseGroup] to a SQL WHERE clause string.
 String conditionToSQL(WhereCondition condition) {
-  final operator = clauseOperatorToStringSymbol(condition.clauseOperator);
-  return '${operandToSQL(condition.leftOperand)}'
-      '$operator${operandToSQL(condition.rightOperand)}';
+  final operator = _clauseOperatorToStringSymbol(condition.clauseOperator);
+  return '${_operandToSQL(condition.leftOperand)}'
+      '$operator${_operandToSQL(condition.rightOperand)}';
 }
 
-String operandToSQL(Operand operand) {
+/// Converts a [Operand] to a string.
+String _operandToSQL(Operand operand) {
   if (operand is StringLiteralOperand) {
     return '"${operand.value}"';
   } else if (operand is NumberLiteralOperand) {
@@ -211,7 +209,7 @@ String operandToSQL(Operand operand) {
   throw ArgumentError('Unknown Operand type');
 }
 
-String clauseOperatorToStringSymbol(ClauseOperator op) {
+String _clauseOperatorToStringSymbol(ClauseOperator op) {
   switch (op) {
     case ClauseOperator.equals:
       return '=';

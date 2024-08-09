@@ -1,6 +1,6 @@
 import 'package:selecta/model/model.dart';
-import 'package:selecta/where_clause_builder.dart';
 
+/// Converts a [SelectStatement] to a SQL SELECT statement.
 String statementToSQL(SelectStatement statement) {
   final selectClause = statement.select.map((col) {
     if (col is AllColumns) {
@@ -19,6 +19,7 @@ String statementToSQL(SelectStatement statement) {
       '${statement.from}${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}';
 }
 
+/// Converts a [WhereClauseGroup] to a SQL WHERE clause.
 String whereClauseGroupToSQL(WhereClauseGroup group) {
   final parts = <String>[];
   for (final element in group.elements) {
@@ -33,11 +34,13 @@ String whereClauseGroupToSQL(WhereClauseGroup group) {
   return parts.join(' ');
 }
 
+/// Converts a [WhereCondition] to a SQL WHERE condition.
 String conditionToSQL(WhereCondition condition) {
   final operator = getClauseOperatorSymbol(condition.clauseOperator);
   return '${condition.leftOperand}$operator${condition.rightOperand}';
 }
 
+/// Converts an [Operand] to a SQL operand.
 String getClauseOperatorSymbol(ClauseOperator op) => switch (op) {
       ClauseOperator.equals => '=',
       ClauseOperator.notEquals => '!=',
@@ -104,37 +107,3 @@ String getLogicalOperatorSymbol(LogicalOperator op) => switch (op) {
       LogicalOperator.and => 'AND',
       LogicalOperator.or => 'OR',
     };
-
-/// An extension on [SelectStatementBuilder] that provides a fluent API for
-extension WhereClauseBuilderExtensions on WhereClauseBuilder {
-  /// Adds a where condition to the where clause.
-  void and() => logicalOperator(LogicalOperator.and);
-
-  /// Adds a where condition to the where clause.
-  void or() => logicalOperator(LogicalOperator.or);
-
-  /// Adds a grouping operator to the where clause.
-  void openBracket() => groupingOperator(GroupingOperator.open);
-
-  /// Adds a grouping operator to the where clause.
-  void closeBracket() => groupingOperator(GroupingOperator.close);
-
-  /// Adds a where condition to the where clause.
-  void equalsNumber(
-    ColumnReferenceOperand columnReferenceOperand,
-    num number,
-  ) =>
-      condition(
-        columnReferenceOperand,
-        ClauseOperator.equals,
-        NumberLiteralOperand(number),
-      );
-
-  /// Adds a where condition to the where clause.
-  void equalsText(ColumnReferenceOperand columnReferenceOperand, String text) =>
-      condition(
-        columnReferenceOperand,
-        ClauseOperator.equals,
-        StringLiteralOperand(text),
-      );
-}
