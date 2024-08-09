@@ -21,6 +21,7 @@ final class AllColumns extends SelectedColumn {
   int get hashCode => Object.hash('AllColumns', tableName);
 }
 
+
 final class ColumnReference extends SelectedColumn {
   ColumnReference(this.columnName, {this.tableName});
   final String columnName;

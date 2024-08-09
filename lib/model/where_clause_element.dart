@@ -1,5 +1,6 @@
 import 'package:selecta/functions.dart';
 import 'package:selecta/model/operand.dart';
+import 'package:selecta/model/select_statement.dart';
 
 /// A type that represents a where clause element.
 sealed class WhereClauseElement {}
@@ -78,9 +79,13 @@ enum GroupingOperator implements WhereClauseElement {
 }
 
 /// A type that represents a group of where clause elements.
+/// It's kinda questionable whether this is necessary or not.
+/// The [SelectStatement] could just have a list of [WhereClauseElement]s.
 final class WhereClauseGroup implements WhereClauseElement {
+  /// Creates a new where clause group.
   WhereClauseGroup(this.elements);
 
+  /// The elements of the group.
   final List<WhereClauseElement> elements;
 
   @override

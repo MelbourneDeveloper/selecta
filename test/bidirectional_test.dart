@@ -23,7 +23,7 @@ void testBidirectionalConversion(
 }
 
 void main() {
-  test('asdsd', () {
+  test('Select two columns', () {
     final selectStatement = toSelectStatement('SELECT id, name FROM Users');
     // ignore: avoid_print
     print('Columns: ${selectStatement.select} From: ${selectStatement.from}');
