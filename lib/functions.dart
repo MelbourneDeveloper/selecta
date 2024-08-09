@@ -26,10 +26,8 @@ String whereClauseGroupToSQL(WhereClauseGroup group) => group.elements
         WhereCondition() => conditionToSQL(element),
         LogicalOperator() => element.name.toUpperCase(),
         WhereClauseGroup() => '(${whereClauseGroupToSQL(element)})',
-        // TODO: Handle this case.
-        GroupingOperator.open => throw UnimplementedError(),
-        // TODO: Handle this case.
-        GroupingOperator.close => throw UnimplementedError(),
+        GroupingOperator.open => '(',
+        GroupingOperator.close => ')',
       },
     )
     .join(' ');
