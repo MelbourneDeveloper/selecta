@@ -58,4 +58,120 @@ void main() {
 
     expect(sql, 'WHERE NAME="JIM" AND ( ID=123 OR ID=321 )');
   });
+
+  group('whereClauseGroupToSQL', () {
+    test('handles simple conditions', () {
+      final group = WhereClauseGroup([
+        WhereCondition(
+          const ColumnReferenceOperand('age'),
+          ClauseOperator.greaterThan,
+          NumberLiteralOperand(18),
+        ),
+      ]);
+      expect(whereClauseGroupToSQL(group), 'age > 18');
+    });
+
+    test('handles multiple conditions with logical operators', () {
+      final group = WhereClauseGroup([
+        WhereCondition(
+          const ColumnReferenceOperand('age'),
+          ClauseOperator.greaterThan,
+          NumberLiteralOperand(18),
+        ),
+        LogicalOperator.and,
+        WhereCondition(
+          const ColumnReferenceOperand('name'),
+          ClauseOperator.equals,
+          StringLiteralOperand('John'),
+        ),
+      ]);
+      expect(whereClauseGroupToSQL(group), 'age > 18 AND name = "John"');
+    });
+
+    test('handles nested groups', () {
+      final group = WhereClauseGroup([
+        WhereClauseGroup([
+          WhereCondition(
+            const ColumnReferenceOperand('age'),
+            ClauseOperator.greaterThan,
+            NumberLiteralOperand(18),
+          ),
+          LogicalOperator.or,
+          WhereCondition(
+            const ColumnReferenceOperand('status'),
+            ClauseOperator.equals,
+            StringLiteralOperand('adult'),
+          ),
+        ]),
+        LogicalOperator.and,
+        WhereCondition(
+          const ColumnReferenceOperand('country'),
+          ClauseOperator.equals,
+          StringLiteralOperand('USA'),
+        ),
+      ]);
+      expect(
+        whereClauseGroupToSQL(group),
+        '(age > 18 OR status = "adult") AND country = "USA"',
+      );
+    });
+
+    test('throws UnimplementedError for GroupingOperator.open', () {
+      final group = WhereClauseGroup([
+        GroupingOperator.open,
+        WhereCondition(
+          const ColumnReferenceOperand('age'),
+          ClauseOperator.greaterThan,
+          NumberLiteralOperand(18),
+        ),
+      ]);
+      expect(
+        () => whereClauseGroupToSQL(group),
+        throwsA(isA<UnimplementedError>()),
+      );
+    });
+
+    test('throws UnimplementedError for GroupingOperator.close', () {
+      final group = WhereClauseGroup([
+        WhereCondition(
+          const ColumnReferenceOperand('age'),
+          ClauseOperator.greaterThan,
+          NumberLiteralOperand(18),
+        ),
+        GroupingOperator.close,
+      ]);
+      expect(
+        () => whereClauseGroupToSQL(group),
+        throwsA(isA<UnimplementedError>()),
+      );
+    });
+
+    test('handles complex nested structure with unimplemented operators', () {
+      final group = WhereClauseGroup([
+        GroupingOperator.open,
+        WhereCondition(
+          const ColumnReferenceOperand('age'),
+          ClauseOperator.greaterThan,
+          NumberLiteralOperand(18),
+        ),
+        LogicalOperator.or,
+        WhereCondition(
+          const ColumnReferenceOperand('status'),
+          ClauseOperator.equals,
+          StringLiteralOperand('adult'),
+        ),
+        GroupingOperator.close,
+        LogicalOperator.and,
+        WhereCondition(
+          const ColumnReferenceOperand('country'),
+          ClauseOperator.equals,
+          StringLiteralOperand('USA'),
+        ),
+      ]);
+      expect(
+        () => whereClauseGroupToSQL(group),
+        throwsA(isA<UnimplementedError>()),
+      );
+    });
+  });
 }
