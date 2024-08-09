@@ -2,43 +2,42 @@ import 'package:selecta/model/model.dart';
 
 /// Converts a [SelectStatement] to a SQL SELECT statement.
 String statementToSQL(SelectStatement statement) {
-  final selectClause = statement.select.map((col) {
-    if (col is AllColumns) {
-      return col.tableName != null ? '${col.tableName}.*' : '*';
-    } else if (col is ColumnReference) {
-      return col.tableName != null
-          ? '${col.tableName}.${col.columnName}'
-          : col.columnName;
-    }
-    throw ArgumentError('Unknown SelectedColumn type');
-  }).join(', ');
+  final selectClause = statement.select
+      .map(
+        (col) => switch (col) {
+          AllColumns() => col.tableName != null ? '${col.tableName}.*' : '*',
+          ColumnReference() => col.tableName != null
+              ? '${col.tableName}.${col.columnName}'
+              : col.columnName,
+        },
+      )
+      .join(', ');
 
   final whereClause = whereClauseGroupToSQL(statement.where);
 
-  return 'SELECT $selectClause FROM '
-      '${statement.from}${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}';
+  return 'SELECT $selectClause FROM ${statement.from}'
+      '${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}';
 }
 
 /// Converts a [WhereClauseGroup] to a SQL WHERE clause.
-String whereClauseGroupToSQL(WhereClauseGroup group) {
-  final parts = <String>[];
-  for (final element in group.elements) {
-    if (element is WhereCondition) {
-      parts.add(conditionToSQL(element));
-    } else if (element is LogicalOperator) {
-      parts.add(element.name.toUpperCase());
-    } else if (element is WhereClauseGroup) {
-      parts.add('(${whereClauseGroupToSQL(element)})');
-    }
-  }
-  return parts.join(' ');
-}
+String whereClauseGroupToSQL(WhereClauseGroup group) => group.elements
+    .map(
+      (element) => switch (element) {
+        WhereCondition() => conditionToSQL(element),
+        LogicalOperator() => element.name.toUpperCase(),
+        WhereClauseGroup() => '(${whereClauseGroupToSQL(element)})',
+        // TODO: Handle this case.
+        GroupingOperator.open => throw UnimplementedError(),
+        // TODO: Handle this case.
+        GroupingOperator.close => throw UnimplementedError(),
+      },
+    )
+    .join(' ');
 
 /// Converts a [WhereCondition] to a SQL WHERE condition.
-String conditionToSQL(WhereCondition condition) {
-  final operator = getClauseOperatorSymbol(condition.clauseOperator);
-  return '${condition.leftOperand}$operator${condition.rightOperand}';
-}
+String conditionToSQL(WhereCondition condition) => '${condition.leftOperand}'
+    '${getClauseOperatorSymbol(condition.clauseOperator)}'
+    '${condition.rightOperand}';
 
 /// Converts an [Operand] to a SQL operand.
 String getClauseOperatorSymbol(ClauseOperator op) => switch (op) {
