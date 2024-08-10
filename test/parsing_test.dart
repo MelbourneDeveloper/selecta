@@ -1,5 +1,6 @@
 import 'package:selecta/model/join.dart';
 import 'package:selecta/model/model.dart';
+import 'package:selecta/model/order_by.dart';
 import 'package:selecta/sql_parser.dart';
 import 'package:test/test.dart';
 
@@ -141,5 +142,64 @@ void main() {
       result[0].on.elements.length,
       equals(3),
     );
+  });
+
+  group('parseOrderByClause', () {
+    test('parses single column ascending', () {
+      final result = parseOrderByClause('name ASC');
+      expect(result.length, 1);
+      expect(result[0], isA<OrderByColumn>());
+      final orderByColumn = result[0] as OrderByColumn;
+      expect(orderByColumn.columnName, 'name');
+      expect(orderByColumn.direction, SortDirection.ascending);
+      expect(orderByColumn.tableName, isNull);
+    });
+
+    test('parses single column descending', () {
+      final result = parseOrderByClause('age DESC');
+      expect(result.length, 1);
+      expect(result[0], isA<OrderByColumn>());
+      final orderByColumn = result[0] as OrderByColumn;
+      expect(orderByColumn.columnName, 'age');
+      expect(orderByColumn.direction, SortDirection.descending);
+      expect(orderByColumn.tableName, isNull);
+    });
+
+    test('parses multiple columns', () {
+      final result = parseOrderByClause('name ASC, age DESC');
+      expect(result.length, 2);
+      expect(result[0], isA<OrderByColumn>());
+      expect(result[1], isA<OrderByColumn>());
+      expect((result[0] as OrderByColumn).columnName, 'name');
+      expect((result[0] as OrderByColumn).direction, SortDirection.ascending);
+      expect((result[1] as OrderByColumn).columnName, 'age');
+      expect((result[1] as OrderByColumn).direction, SortDirection.descending);
+    });
+
+    test('handles table-qualified columns', () {
+      final result = parseOrderByClause('Users.name ASC, Orders.date DESC');
+      expect(result.length, 2);
+      expect(result[0], isA<OrderByColumn>());
+      expect(result[1], isA<OrderByColumn>());
+      expect((result[0] as OrderByColumn).columnName, 'name');
+      expect((result[0] as OrderByColumn).tableName, 'Users');
+      expect((result[1] as OrderByColumn).columnName, 'date');
+      expect((result[1] as OrderByColumn).tableName, 'Orders');
+    });
+
+    test('defaults to ascending when direction not specified', () {
+      final result = parseOrderByClause('name');
+      expect(result.length, 1);
+      expect((result[0] as OrderByColumn).direction, SortDirection.ascending);
+    });
+
+    test('handles mixed qualified and unqualified columns', () {
+      final result = parseOrderByClause('Users.name ASC, age DESC');
+      expect(result.length, 2);
+      expect((result[0] as OrderByColumn).columnName, 'name');
+      expect((result[0] as OrderByColumn).tableName, 'Users');
+      expect((result[1] as OrderByColumn).columnName, 'age');
+      expect((result[1] as OrderByColumn).tableName, isNull);
+    });
   });
 }
