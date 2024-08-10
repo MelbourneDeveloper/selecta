@@ -135,6 +135,14 @@ void main() {
   );
 
   test(
+    'SELECT with WHERE clause mixing AND and OR without parentheses '
+    'with ORDER BY',
+    () => testBidirectionalConversion(
+      '''SELECT * FROM Customers WHERE country="USA" AND (state="California" OR state="New York" ) ORDER BY name DESC''',
+    ),
+  );
+
+  test(
     'SELECT with WHERE clause using numeric comparisons',
     () => testBidirectionalConversion(
       '''SELECT product_name, stock_quantity FROM Inventory WHERE stock_quantity>0 AND stock_quantity<=100''',
