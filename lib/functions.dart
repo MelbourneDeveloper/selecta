@@ -121,13 +121,8 @@ String getLogicalOperatorSymbol(LogicalOperator op) => switch (op) {
     };
 
 /// Converts a [Operand] to a string.
-String _operandToSQL(Operand operand) {
-  if (operand is StringLiteralOperand) {
-    return '"${operand.value}"';
-  } else if (operand is NumberLiteralOperand) {
-    return operand.value.toString();
-  } else if (operand is ColumnReferenceOperand) {
-    return operand.value;
-  }
-  throw ArgumentError('Unknown Operand type');
-}
+String _operandToSQL(Operand operand) => switch (operand) {
+      final StringLiteralOperand operand => '"${operand.value}"',
+      final NumberLiteralOperand operand => operand.value.toString(),
+      final ColumnReferenceOperand operand => operand.value,
+    };
