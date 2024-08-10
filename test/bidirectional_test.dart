@@ -181,8 +181,8 @@ void main() {
     test(
       'SELECT with INNER JOIN',
       () => testBidirectionalConversion(
-        'SELECT Orders.id, Customers.name FROM Orders INNER JOIN Customers'
-        ' ON Orders.customer_id = Customers.id',
+        'SELECT Orders.id, Customers.name FROM Orders '
+        'INNER JOIN Customers ON Orders.customer_id = Customers.id',
         validateStatement: (ss) {
           expect(ss.joins.length, 1);
           expect(ss.joins.first.type, JoinType.inner);

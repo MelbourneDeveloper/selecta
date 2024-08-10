@@ -4,7 +4,7 @@ import 'package:selecta/model/order_by.dart';
 
 /// Converts a list of [SelectedColumn]s to a SQL SELECT statement.
 SelectStatement toSelectStatement(String sql) {
-  final cleanSql = sql.trim().endsWith(';') ? sql.trim() : '${sql.trim()};';
+  final cleanSql = sql.trim();
 
   final clauses = _extractClauses(cleanSql);
 
@@ -22,18 +22,16 @@ List<Join> parseJoinClauses(String joinClauses) {
   if (joinClauses.isEmpty) return [];
 
   final joins = <Join>[];
-  final joinParts =
-      joinClauses.split(RegExp(r'\b(INNER|LEFT|RIGHT|FULL)\s+JOIN\b'));
+  final joinRegex = RegExp(
+    r'\b(INNER|LEFT|RIGHT|FULL)?\s*JOIN\s+(\w+)\s+ON\s+(.+?)(?=\s+(?:INNER|LEFT|RIGHT|FULL)?\s*JOIN|$)',
+    caseSensitive: false,
+    dotAll: true,
+  );
 
-  for (var i = 1; i < joinParts.length; i += 2) {
-    final joinType = _parseJoinType(joinParts[i].trim());
-    final joinDetails = joinParts[i + 1].trim().split('ON');
-    if (joinDetails.length != 2) {
-      throw FormatException('Invalid JOIN clause: ${joinParts[i + 1]}');
-    }
-
-    final tableName = joinDetails[0].trim();
-    final condition = parseWhereClause(joinDetails[1].trim());
+  for (final match in joinRegex.allMatches(joinClauses)) {
+    final joinType = _parseJoinType(match.group(1) ?? '');
+    final tableName = match.group(2)!.trim();
+    final condition = parseWhereClause(match.group(3)!.trim());
 
     joins.add(
       Join(
@@ -46,15 +44,6 @@ List<Join> parseJoinClauses(String joinClauses) {
 
   return joins;
 }
-
-JoinType _parseJoinType(String joinTypeStr) =>
-    switch (joinTypeStr.toUpperCase()) {
-      'INNER' => JoinType.inner,
-      'LEFT' => JoinType.left,
-      'RIGHT' => JoinType.right,
-      'FULL' => JoinType.full,
-      _ => throw FormatException('Unknown join type: $joinTypeStr'),
-    };
 
 /// Parse the ORDER BY clause of a SQL SELECT statement.
 List<OrderByElement> parseOrderByClause(String orderByClause) =>
@@ -127,28 +116,57 @@ WhereClauseGroup parseWhereClause(String whereClause) {
   return WhereClauseGroup(elements);
 }
 
+JoinType _parseJoinType(String joinTypeStr) {
+  switch (joinTypeStr.trim().toUpperCase()) {
+    case '':
+    case 'INNER':
+      return JoinType.inner;
+    case 'LEFT':
+      return JoinType.left;
+    case 'RIGHT':
+      return JoinType.right;
+    case 'FULL':
+      return JoinType.full;
+    default:
+      throw FormatException('Unknown join type: $joinTypeStr');
+  }
+}
+
 Map<String, String> _extractClauses(String sql) {
   final upperSql = sql.toUpperCase();
-  final clauseKeywords = ['SELECT', 'FROM', 'JOIN', 'WHERE', 'ORDER BY'];
+  final clauseKeywords = ['SELECT', 'FROM', 'WHERE', 'ORDER BY'];
 
-  return Map.fromEntries(
-    clauseKeywords.map((keyword) {
-      final start = upperSql.indexOf(keyword);
-      if (start == -1) return MapEntry(keyword, '');
+  final result = <String, String>{};
 
-      final nextKeywordIndex = clauseKeywords
-          .skip(clauseKeywords.indexOf(keyword) + 1)
-          .map((k) => upperSql.indexOf(k, start + keyword.length))
-          .where((idx) => idx != -1)
-          .fold<int?>(null, (min, idx) => min == null || idx < min ? idx : min);
+  int findNextKeywordIndex(int startIndex) => clauseKeywords
+      .map((k) => upperSql.indexOf(k, startIndex))
+      .where((idx) => idx != -1)
+      .fold(sql.length, (min, idx) => idx < min ? idx : min);
 
-      final end = nextKeywordIndex ?? sql.length - 1;
-      return MapEntry(
-        keyword,
-        sql.substring(start + keyword.length, end).trim(),
-      );
-    }),
+  var lastEndIndex = 0;
+  for (final keyword in clauseKeywords) {
+    final start = upperSql.indexOf(keyword, lastEndIndex);
+    if (start != -1) {
+      final end = findNextKeywordIndex(start + keyword.length);
+      result[keyword] = sql.substring(start + keyword.length, end).trim();
+      lastEndIndex = end;
+    }
+  }
+
+  // Handle JOIN clauses
+  final joinPattern = RegExp(
+    r'(INNER JOIN|LEFT JOIN|RIGHT JOIN|FULL JOIN)\s+.*?(?=SELECT|FROM|WHERE|ORDER BY|$)',
+    caseSensitive: false,
+    dotAll: true,
   );
+
+  final joinClauses = joinPattern.allMatches(sql).map((m) => m[0]!).join(' ');
+
+  if (joinClauses.isNotEmpty) {
+    result['JOIN'] = joinClauses;
+  }
+
+  return result;
 }
 
 /// Tokenizes a where clause string into individual tokens.
