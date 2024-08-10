@@ -110,31 +110,45 @@ WhereClauseGroup parseWhereClause(String whereClause) {
 }
 
 /// Tokenizes a where clause string into individual tokens.
-List<String> tokenizeWhereClause(String whereClause) {
-  // Split the where clause into tokens, preserving quoted strings
-  final regex = RegExp(r'''(\s+)|("[^"]*")|('[^']*')|([!<>=]+)''');
-  return whereClause
-      .splitMapJoin(
-        regex,
-        onMatch: (m) =>
-            '${m.group(2) ?? ''}${m.group(3) ?? ''}${m.group(4) ?? ''} ',
-        onNonMatch: (s) => '$s ',
-      )
-      .trim()
-      .split(RegExp(r'\s+'));
-}
+List<String> tokenizeWhereClause(String whereClause) =>
+    // Split the where clause into tokens, preserving quoted strings
+    whereClause
+        .splitMapJoin(
+          RegExp(r'''(\s+)|("[^"]*")|('[^']*')|([!<>=]+)'''),
+          onMatch: (m) =>
+              '${m.group(2) ?? ''}${m.group(3) ?? ''}${m.group(4) ?? ''} ',
+          onNonMatch: (s) => '$s ',
+        )
+        .trim()
+        .split(RegExp(r'\s+'));
 
 /// Finds the index of the closing parenthesis for an open parenthesis at
 /// [openIndex].
-int _findClosingParenthesis(List<String> tokens, int openIndex) {
-  var count = 1;
-  for (var i = openIndex + 1; i < tokens.length; i++) {
-    if (tokens[i] == '(') count++;
-    if (tokens[i] == ')') count--;
-    if (count == 0) return i;
-  }
-  throw const FormatException('Mismatched parentheses');
-}
+int _findClosingParenthesis(List<String> tokens, int openIndex) =>
+    _findClosingParenthesisRecursive(tokens, openIndex + 1, 1);
+
+int _findClosingParenthesisRecursive(
+  List<String> tokens,
+  int currentIndex,
+  int count,
+) =>
+    currentIndex >= tokens.length
+        ? throw const FormatException('Mismatched parentheses')
+        : switch (tokens[currentIndex]) {
+            '(' => _findClosingParenthesisRecursive(
+                tokens,
+                currentIndex + 1,
+                count + 1,
+              ),
+            ')' when count == 1 => currentIndex,
+            ')' => _findClosingParenthesisRecursive(
+                tokens,
+                currentIndex + 1,
+                count - 1,
+              ),
+            _ =>
+              _findClosingParenthesisRecursive(tokens, currentIndex + 1, count),
+          };
 
 /// Parses a list of tokens into a [WhereCondition].
 WhereCondition _parseCondition(List<String> conditionTokens) {
@@ -158,39 +172,25 @@ WhereCondition _parseCondition(List<String> conditionTokens) {
   );
 }
 
-///
-ClauseOperator _parseOperator(String op) {
-  switch (op) {
-    case '=':
-      return ClauseOperator.equals;
-    case '!=':
-      return ClauseOperator.notEquals;
-    case '>':
-      return ClauseOperator.greaterThan;
-    case '>=':
-      return ClauseOperator.greaterThanEqualTo;
-    case '<':
-      return ClauseOperator.lessThan;
-    case '<=':
-      return ClauseOperator.lessThanEqualTo;
-    default:
-      throw FormatException('Unknown operator: $op');
-  }
-}
+/// Convert the string representation of an operator to a [ClauseOperator].
+ClauseOperator _parseOperator(String op) => switch (op) {
+      '=' => ClauseOperator.equals,
+      '!=' => ClauseOperator.notEquals,
+      '>' => ClauseOperator.greaterThan,
+      '>=' => ClauseOperator.greaterThanEqualTo,
+      '<' => ClauseOperator.lessThan,
+      '<=' => ClauseOperator.lessThanEqualTo,
+      _ => throw FormatException('Unknown operator: $op'),
+    };
 
 /// Parses a string value into an [Operand].
-Operand _parseOperand(String value) {
-  if (value.startsWith('"') && value.endsWith('"')) {
-    return StringLiteralOperand(value.substring(1, value.length - 1));
-  }
-  if (value.startsWith("'") && value.endsWith("'")) {
-    return StringLiteralOperand(value.substring(1, value.length - 1));
-  }
-  if (num.tryParse(value) != null) {
-    return NumberLiteralOperand(num.parse(value));
-  }
-  return ColumnReferenceOperand(value);
-}
+Operand _parseOperand(String value) =>
+    (value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'"))
+        ? StringLiteralOperand(value.substring(1, value.length - 1))
+        : num.tryParse(value) != null
+            ? NumberLiteralOperand(num.parse(value))
+            : ColumnReferenceOperand(value);
 
 /// Converts a [WhereClauseGroup] to a SQL WHERE clause string.
 String conditionToSQL(WhereCondition condition) {
