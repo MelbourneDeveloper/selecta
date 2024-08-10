@@ -1,121 +1,267 @@
-
+import 'package:selecta/model/join.dart';
 import 'package:selecta/model/model.dart';
+import 'package:selecta/model/order_by.dart';
 
-SelectStatement toSelectStatement(String sqlText) {
-  final parts = sqlText.split(' WHERE ');
-  final selectPart = parts[0].trim();
-  final wherePart = parts.length > 1 ? parts[1].trim() : null;
+/// Converts a list of [SelectedColumn]s to a SQL SELECT statement.
+SelectStatement toSelectStatement(String sql) {
+  final cleanSql = sql.trim();
+  final clauses = _extractClauses(cleanSql);
 
-  // Parse SELECT part
-  final selectClause = selectPart.substring(6).trim(); // Remove "SELECT "
-  final fromIndex = selectClause.toUpperCase().indexOf(' FROM ');
-  final columns =
-      selectClause.substring(0, fromIndex).split(',').map((col) => col.trim());
-  final fromClause =
-      selectClause.substring(fromIndex + 6).trim(); // Remove " FROM "
-
-  final selectedColumns = <SelectedColumn>[];
-  for (final column in columns) {
-    if (column == '*') {
-      selectedColumns.add(AllColumns());
-    } else {
-      final parts = column.split('.');
-      if (parts.length == 2) {
-        selectedColumns.add(ColumnReference(parts[1], tableName: parts[0]));
-      } else {
-        selectedColumns.add(ColumnReference(parts[0]));
-      }
-    }
-  }
-
-  // Parse WHERE part
-  final where = <WhereClauseElement>[];
-  if (wherePart != null) {
-    final tokens = _tokenizeWhere(wherePart);
-    where.addAll(_parseWhereClause(tokens));
-  }
-
-  return SelectStatement(fromClause, selectedColumns, where: where);
+  return SelectStatement(
+    clauses['FROM'] ?? '',
+    parseSelectedColumns(clauses['SELECT'] ?? ''),
+    where: parseWhereClause(clauses['WHERE'] ?? ''),
+    orderBy: parseOrderByClause(clauses['ORDER BY'] ?? ''),
+    joins: parseJoinClauses(clauses['JOIN'] ?? ''),
+  );
 }
 
-List<String> _tokenizeWhere(String wherePart) {
-  final regex =
-      RegExp(r'''\s+|\(|\)|=|!=|>|<|AND|OR|"[^"]*"|'[^']*'|\d+(\.\d+)?|\w+''');
-  return wherePart
-      .splitMapJoin(
-        regex,
-        onMatch: (m) => '${m.group(0)}',
-        onNonMatch: (s) => '',
+/// Parse the JOIN clauses of a SQL SELECT statement.
+List<Join> parseJoinClauses(String joinClauses) => joinClauses.isEmpty
+    ? []
+    : RegExp(
+        r'\b(INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN|FULL\s+JOIN|JOIN)\s+(\w+)\s+ON\s+(.*?)(?=\s+(?:INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN|FULL\s+JOIN|JOIN)\b|$)',
+        caseSensitive: false,
+        dotAll: true,
       )
-      .split(' ')
-      .where((s) => s.isNotEmpty)
-      .toList();
+        .allMatches(joinClauses)
+        .map(
+          (match) => Join(
+            type: _parseJoinType(match.group(1)!.split(RegExp(r'\s+'))[0]),
+            table: match.group(2)!,
+            on: parseWhereClause(match.group(3)!.trim()),
+          ),
+        )
+        .toList();
+
+/// Parse the ORDER BY clause of a SQL SELECT statement.
+List<OrderByElement> parseOrderByClause(String orderByClause) =>
+    orderByClause.isEmpty
+        ? []
+        : orderByClause.split(',').map((column) {
+            final parts = column.trim().split(RegExp(r'\s+'));
+            final columnParts = parts[0].split('.');
+            final columnName =
+                columnParts.length > 1 ? columnParts[1] : columnParts[0];
+            final tableName = columnParts.length > 1 ? columnParts[0] : null;
+            return OrderByColumn(
+              columnName,
+              tableName: tableName,
+              direction: parts.length > 1 && parts[1].toUpperCase() == 'DESC'
+                  ? SortDirection.descending
+                  : SortDirection.ascending,
+            );
+          }).toList();
+
+/// Converts the selected columns part of a [SelectStatement] to a list
+/// of [SelectedColumn] objects.
+List<SelectedColumn> parseSelectedColumns(String selectClause) {
+  final columns = selectClause.split(',').map((col) => col.trim()).toList();
+  return columns.map((col) {
+    if (col == '*') {
+      return AllColumns();
+    } else if (col.contains('.')) {
+      final parts = col.split('.');
+      return ColumnReference(parts[1], tableName: parts[0]);
+    } else {
+      return ColumnReference(col);
+    }
+  }).toList();
 }
 
-List<WhereClauseElement> _parseWhereClause(List<String> tokens) {
+/// Converts a [SelectStatement] to a SQL SELECT statement.
+WhereClauseGroup parseWhereClause(String whereClause) {
+  if (whereClause.isEmpty) {
+    return WhereClauseGroup([]);
+  }
+
   final elements = <WhereClauseElement>[];
+  final tokens = _tokenizeWhereClause(whereClause);
+
   for (var i = 0; i < tokens.length; i++) {
     switch (tokens[i].toUpperCase()) {
+      case '(':
+        final closingIndex = _findClosingParenthesis(tokens, i);
+        elements.add(
+          parseWhereClause(tokens.sublist(i + 1, closingIndex).join(' ')),
+        );
+        i = closingIndex;
       case 'AND':
         elements.add(LogicalOperator.and);
       case 'OR':
         elements.add(LogicalOperator.or);
-      case '(':
-        elements.add(GroupingOperator.open);
-      case ')':
-        elements.add(GroupingOperator.close);
       default:
-        if (i + 2 < tokens.length) {
-          if (_isClauseOperator(tokens[i + 1])) {
-            elements.add(
-              _parseCondition(tokens[i], tokens[i + 1], tokens[i + 2]),
-            );
-            i +=
-                2; // Skip the next two tokens as they're part of this condition
-          }
-        }
+        // Find the next logical operator or end of clause
+        final nextLogicalOpIndex = tokens.indexWhere(
+          (t) => ['AND', 'OR'].contains(t.toUpperCase()),
+          i + 1,
+        );
+        final conditionEndIndex =
+            nextLogicalOpIndex == -1 ? tokens.length : nextLogicalOpIndex;
+
+        // Parse the condition
+        elements.add(_parseCondition(tokens.sublist(i, conditionEndIndex)));
+
+        // Move the index to the end of this condition
+        i = conditionEndIndex - 1;
     }
   }
-  return elements;
+
+  return WhereClauseGroup(elements);
 }
 
-bool _isClauseOperator(String token) =>
-    ['=', '!=', '>', '<', '>=', '<='].contains(token);
+JoinType _parseJoinType(String joinTypeStr) =>
+    switch (joinTypeStr.trim().toUpperCase()) {
+      'INNER' => JoinType.inner,
+      'LEFT' => JoinType.left,
+      'RIGHT' => JoinType.right,
+      'FULL' => JoinType.full,
+      'JOIN' => JoinType.inner,
+      _ => throw FormatException('Unknown join type: $joinTypeStr'),
+    };
 
-Operand _parseRightOperand(String value) {
-  if (value.startsWith('"') && value.endsWith('"')) {
-    return StringLiteralOperand(value.substring(1, value.length - 1));
-  } else if (int.tryParse(value) != null) {
-    return NumberLiteralOperand(int.parse(value));
-  } else if (double.tryParse(value) != null) {
-    return NumberLiteralOperand(double.parse(value));
-  } else {
-    return ColumnReferenceOperand(value);
+Map<String, String> _extractClauses(String sql) {
+  final upperSql = sql.toUpperCase();
+  final clauseKeywords = ['SELECT', 'FROM', 'WHERE', 'ORDER BY'];
+  final joinKeywords = [
+    'INNER JOIN',
+    'LEFT JOIN',
+    'RIGHT JOIN',
+    'FULL JOIN',
+    'JOIN',
+  ];
+  final allKeywords = [...clauseKeywords, ...joinKeywords];
+
+  final result = <String, String>{};
+
+  int findNextKeywordIndex(int startIndex, List<String> keywords) => keywords
+      .map((k) => upperSql.indexOf(k, startIndex))
+      .where((idx) => idx != -1)
+      .fold(sql.length, (min, idx) => idx < min ? idx : min);
+
+  var lastEndIndex = 0;
+  for (final keyword in clauseKeywords) {
+    final start = upperSql.indexOf(keyword, lastEndIndex);
+    if (start != -1) {
+      final nextKeywordIndex =
+          findNextKeywordIndex(start + keyword.length, allKeywords);
+      result[keyword] =
+          sql.substring(start + keyword.length, nextKeywordIndex).trim();
+      lastEndIndex = nextKeywordIndex;
+    }
   }
-}
 
-WhereCondition _parseCondition(String left, String operator, String right) {
-  final leftOperand = ColumnReferenceOperand(left);
-  final clauseOperator = _parseClauseOperator(operator);
-  final rightOperand = _parseRightOperand(right);
-  return WhereCondition(leftOperand, clauseOperator, rightOperand);
-}
+  // Handle JOIN clauses
+  final joinStart = findNextKeywordIndex(0, joinKeywords);
+  if (joinStart < sql.length) {
+    final joinEnd = findNextKeywordIndex(joinStart, ['WHERE', 'ORDER BY']);
+    result['JOIN'] = sql.substring(joinStart, joinEnd).trim();
 
-ClauseOperator _parseClauseOperator(String operator) {
-  switch (operator) {
-    case '=':
-      return ClauseOperator.equals;
-    case '!=':
-      return ClauseOperator.notEquals;
-    case '>':
-      return ClauseOperator.greaterThan;
-    case '>=':
-      return ClauseOperator.greaterThanEqualTo;
-    case '<':
-      return ClauseOperator.lessThan;
-    case '<=':
-      return ClauseOperator.lessThanEqualTo;
-    default:
-      throw FormatException('Unsupported clause operator: $operator');
+    // Adjust WHERE and ORDER BY if they come after JOIN
+    if (joinEnd < sql.length) {
+      final remainingClauses = sql.substring(joinEnd);
+      final whereMatch = RegExp(r'\bWHERE\b', caseSensitive: false)
+          .firstMatch(remainingClauses);
+      final orderByMatch = RegExp(r'\bORDER BY\b', caseSensitive: false)
+          .firstMatch(remainingClauses);
+
+      if (whereMatch != null) {
+        result['WHERE'] = remainingClauses
+            .substring(
+              whereMatch.end,
+              orderByMatch?.start ?? remainingClauses.length,
+            )
+            .trim();
+      }
+      if (orderByMatch != null) {
+        result['ORDER BY'] =
+            remainingClauses.substring(orderByMatch.end).trim();
+      }
+    }
   }
+
+  return result;
 }
+
+/// Tokenizes a where clause string into individual tokens.
+List<String> _tokenizeWhereClause(String whereClause) =>
+    // Split the where clause into tokens, preserving quoted strings
+    whereClause
+        .splitMapJoin(
+          RegExp(r'''(\s+)|("[^"]*")|('[^']*')|([!<>=]+)'''),
+          onMatch: (m) =>
+              '${m.group(2) ?? ''}${m.group(3) ?? ''}${m.group(4) ?? ''} ',
+          onNonMatch: (s) => '$s ',
+        )
+        .trim()
+        .split(RegExp(r'\s+'));
+
+/// Finds the index of the closing parenthesis for an open parenthesis at
+/// [openIndex].
+int _findClosingParenthesis(List<String> tokens, int openIndex) =>
+    _findClosingParenthesisRecursive(tokens, openIndex + 1, 1);
+
+int _findClosingParenthesisRecursive(
+  List<String> tokens,
+  int currentIndex,
+  int count,
+) =>
+    currentIndex >= tokens.length
+        ? throw const FormatException('Mismatched parentheses')
+        : switch (tokens[currentIndex]) {
+            '(' => _findClosingParenthesisRecursive(
+                tokens,
+                currentIndex + 1,
+                count + 1,
+              ),
+            ')' when count == 1 => currentIndex,
+            ')' => _findClosingParenthesisRecursive(
+                tokens,
+                currentIndex + 1,
+                count - 1,
+              ),
+            _ =>
+              _findClosingParenthesisRecursive(tokens, currentIndex + 1, count),
+          };
+
+/// Parses a list of tokens into a [WhereCondition].
+WhereCondition _parseCondition(List<String> conditionTokens) {
+  if (conditionTokens.isEmpty) {
+    throw const FormatException('Empty condition');
+  }
+
+  final operatorIndex = conditionTokens
+      .indexWhere((t) => ['=', '!=', '>', '>=', '<', '<='].contains(t));
+
+  if (operatorIndex == -1) {
+    throw FormatException(
+      'No valid operator found in condition: ${conditionTokens.join(' ')}',
+    );
+  }
+
+  return WhereCondition(
+    _parseOperand(conditionTokens.sublist(0, operatorIndex).join(' ')),
+    _parseOperator(conditionTokens[operatorIndex]),
+    _parseOperand(conditionTokens.sublist(operatorIndex + 1).join(' ')),
+  );
+}
+
+/// Convert the string representation of an operator to a [ClauseOperator].
+ClauseOperator _parseOperator(String op) => switch (op) {
+      '=' => ClauseOperator.equals,
+      '!=' => ClauseOperator.notEquals,
+      '>' => ClauseOperator.greaterThan,
+      '>=' => ClauseOperator.greaterThanEqualTo,
+      '<' => ClauseOperator.lessThan,
+      '<=' => ClauseOperator.lessThanEqualTo,
+      _ => throw FormatException('Unknown operator: $op'),
+    };
+
+/// Parses a string value into an [Operand].
+Operand _parseOperand(String value) =>
+    (value.startsWith('"') && value.endsWith('"')) ||
+            (value.startsWith("'") && value.endsWith("'"))
+        ? StringLiteralOperand(value.substring(1, value.length - 1))
+        : num.tryParse(value) != null
+            ? NumberLiteralOperand(num.parse(value))
+            : ColumnReferenceOperand(value);

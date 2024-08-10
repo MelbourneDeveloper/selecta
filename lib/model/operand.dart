@@ -1,5 +1,3 @@
-
-
 /// Represents an operand in a SQL expression.
 sealed class Operand {}
 
@@ -7,6 +5,7 @@ sealed class Operand {}
 final class ColumnReferenceOperand implements Operand {
   /// Creates a new column reference operand.
   const ColumnReferenceOperand(this.value);
+
   /// The value of the column reference operand.
   final String value;
   @override
@@ -17,6 +16,7 @@ final class ColumnReferenceOperand implements Operand {
 final class StringLiteralOperand implements Operand {
   /// Creates a new string literal operand.
   StringLiteralOperand(this.value);
+
   /// The value of the string literal operand.
   final String value;
   @override
@@ -27,6 +27,7 @@ final class StringLiteralOperand implements Operand {
 final class NumberLiteralOperand implements Operand {
   /// Creates a new number literal operand.
   NumberLiteralOperand(this.value);
+
   /// The value of the number literal operand.
   final num value;
   @override

@@ -1,8 +1,13 @@
+/// Represents a column in a SQL SELECT statement.
 sealed class SelectedColumn {}
 
+/// Represents all columns in a SQL SELECT statement.
 final class AllColumns extends SelectedColumn {
+
+  /// Creates a new instance of [AllColumns].
   AllColumns([this.tableName]);
 
+  /// The name of the table that the columns belong to.
   final String? tableName;
 
   @override
@@ -21,9 +26,16 @@ final class AllColumns extends SelectedColumn {
   int get hashCode => Object.hash('AllColumns', tableName);
 }
 
+/// Represents a reference to a column in a SQL SELECT statement.
 final class ColumnReference extends SelectedColumn {
+
+  /// Creates a new column reference.
   ColumnReference(this.columnName, {this.tableName});
+
+  /// The name of the column.
   final String columnName;
+
+  /// The name of the table that the column belongs to.
   final String? tableName;
 
   @override
@@ -41,18 +53,4 @@ final class ColumnReference extends SelectedColumn {
 
   @override
   int get hashCode => Object.hash('ColumnReference', columnName, tableName);
-}
-
-class SelectStatementBuilder {
-  final _selectedColumns = <SelectedColumn>[];
-
-  void selectAll() {
-    _selectedColumns.add(AllColumns());
-  }
-
-  void selectColumn(String columnName, {String? tableName}) {
-    _selectedColumns.add(ColumnReference(columnName, tableName: tableName));
-  }
-
-  List<SelectedColumn> build() => _selectedColumns;
 }

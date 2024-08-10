@@ -1,52 +1,83 @@
+import 'package:selecta/model/join.dart';
 import 'package:selecta/model/model.dart';
-import 'package:selecta/where_clause_builder.dart';
+import 'package:selecta/model/order_by.dart';
 
-String statementToSQL(SelectStatement statement) {
-  final columns = statement.select.map((col) {
-    if (col is AllColumns) return '*';
-    if (col is ColumnReference) {
-      return col.tableName != null
-          ? '${col.tableName}.${col.columnName}'
-          : col.columnName;
-    }
-    throw UnimplementedError('Unhandled column type: ${col.runtimeType}');
-  }).join(', ');
+/// Converts a [SelectStatement] to a SQL SELECT statement.
+String statementToSql(SelectStatement statement) {
+  final selectClause = statement.select
+      .map(
+        (col) => switch (col) {
+          AllColumns() => col.tableName != null ? '${col.tableName}.*' : '*',
+          ColumnReference() => col.tableName != null
+              ? '${col.tableName}.${col.columnName}'
+              : col.columnName,
+        },
+      )
+      .join(', ');
 
-  final whereClause =
-      statement.where.isNotEmpty ? ' ${toSQL(statement.where)}' : '';
+  final joinClause = joinToSQL(statement.joins);
+  final whereClause = whereClauseGroupToSQL(statement.where);
+  final orderByClause = orderByToSQL(statement.orderBy);
 
-  return 'SELECT $columns FROM ${statement.from}$whereClause';
+  return 'SELECT $selectClause FROM ${statement.from}'
+      '$joinClause'
+      '${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}'
+      '${orderByClause.isNotEmpty ? ' ORDER BY $orderByClause' : ''}';
 }
 
-///This is an oversimplication. It may be slightly different for each
-///db platform. However, it will be mostly the same for each platform and
-///the key is only hooking into the platform specifics where necessary
-String toSQL(List<WhereClauseElement> where) => 'WHERE ${where.map(
+/// Converts a list of [OrderByElement] to a SQL ORDER BY clause.
+String orderByToSQL(List<OrderByElement> orderBy) => orderBy
+    .map(
       (element) => switch (element) {
-        (final WhereCondition condition) =>
-          '${_operandToString(condition.leftOperand)}'
-              '${getClauseOperatorSymbol(condition.clauseOperator)}'
-              '${_operandToString(condition.rightOperand)}',
-        (final LogicalOperator logicalOperator) =>
-          getLogicalOperatorSymbol(logicalOperator),
-        (final GroupingOperator groupingOperator) =>
-          getGroupingOperatorSymbol(groupingOperator),
+        OrderByColumn() =>
+          '${element.tableName != null ? '${element.tableName}.' : ''}'
+              '${element.columnName} ${element.toSql()}',
       },
-    ).join(' ')}';
+    )
+    .join(', ');
 
-String _operandToString(Operand operand) {
-  if (operand is StringLiteralOperand) {
-    return '"${operand.value}"';
-  } else if (operand is NumberLiteralOperand) {
-    return operand.value.toString();
-  } else if (operand is ColumnReferenceOperand) {
-    return operand.value;
-  }
-  throw UnimplementedError('Unhandled operand type: ${operand.runtimeType}');
-}
+/// Converts a [WhereClauseGroup] to a SQL WHERE clause.
+String whereClauseGroupToSQL(WhereClauseGroup group) => group.elements
+    .map(
+      (element) => switch (element) {
+        WhereCondition() => conditionToSQL(element),
+        LogicalOperator() => element.name.toUpperCase(),
+        WhereClauseGroup() => '(${whereClauseGroupToSQL(element)})',
+        GroupingOperator.open => '(',
+        GroupingOperator.close => ')',
+      },
+    )
+    .join(' ');
+
+/// Converts a [WhereClauseGroup] to a SQL WHERE clause string.
+String conditionToSQL(WhereCondition condition) =>
+    '${_operandToSQL(condition.leftOperand)}'
+    '${getClauseOperatorSymbol(condition.clauseOperator)}'
+    '${_operandToSQL(condition.rightOperand)}';
+
+/// Converts a list of [Join] to a SQL JOIN clause.
+String joinToSQL(List<Join> joins) => joins.map((join) {
+      final joinTypeStr = switch (join.type) {
+        JoinType.inner => 'INNER JOIN',
+        JoinType.left => 'LEFT JOIN',
+        JoinType.right => 'RIGHT JOIN',
+        JoinType.full => 'FULL JOIN',
+      };
+      return ' $joinTypeStr ${join.table} ON ${whereClauseGroupToSQL(join.on)}';
+    }).join();
+
+/// Converts an [Operand] to a SQL operand.
+String getClauseOperatorSymbol(ClauseOperator op) => switch (op) {
+      ClauseOperator.equals => '=',
+      ClauseOperator.notEquals => '!=',
+      ClauseOperator.greaterThan => '>',
+      ClauseOperator.greaterThanEqualTo => '>=',
+      ClauseOperator.lessThan => '<',
+      ClauseOperator.lessThanEqualTo => '<=',
+    };
 
 /// Converts a list of selected columns to a SQL SELECT clause
-String toSelectSQL(List<SelectedColumn> selectedColumns) =>
+String selectColumnsToSql(List<SelectedColumn> selectedColumns) =>
     'SELECT ${selectedColumns.map(
           (column) => switch (column) {
             // ignore: unused_local_variable
@@ -62,61 +93,9 @@ String _columnReferenceToString(ColumnReference columnReference) =>
     '${columnReference.tableName != null ? '${columnReference.tableName}'
         '.' : ''}${columnReference.columnName}';
 
-/// Converts a [ClauseOperator] to a SQL operator symbol.
-String getClauseOperatorSymbol(ClauseOperator clauseOperator) =>
-    switch (clauseOperator) {
-      ClauseOperator.equals => '=',
-      ClauseOperator.notEquals => '!=',
-      ClauseOperator.greaterThan => '>',
-      ClauseOperator.greaterThanEqualTo => '>=',
-      ClauseOperator.lessThan => '<',
-      ClauseOperator.lessThanEqualTo => '<=',
+/// Converts a [Operand] to a string.
+String _operandToSQL(Operand operand) => switch (operand) {
+      final StringLiteralOperand operand => '"${operand.value}"',
+      final NumberLiteralOperand operand => operand.value.toString(),
+      final ColumnReferenceOperand operand => operand.value,
     };
-
-/// Converts a [GroupingOperator] to a SQL grouping operator symbol.
-String getGroupingOperatorSymbol(GroupingOperator groupingOperator) =>
-    switch (groupingOperator) {
-      GroupingOperator.open => '(',
-      GroupingOperator.close => ')',
-    };
-
-/// Converts a [LogicalOperator] to a SQL logical operator symbol.
-String getLogicalOperatorSymbol(LogicalOperator logicalOperator) =>
-    switch (logicalOperator) {
-      LogicalOperator.and => 'AND',
-      LogicalOperator.or => 'OR',
-    };
-
-/// An extension on [SelectStatementBuilder] that provides a fluent API for
-extension WhereClauseBuilderExtensions on WhereClauseBuilder {
-  /// Adds a where condition to the where clause.
-  void and() => logicalOperator(LogicalOperator.and);
-
-  /// Adds a where condition to the where clause.
-  void or() => logicalOperator(LogicalOperator.or);
-
-  /// Adds a grouping operator to the where clause.
-  void openBracket() => groupingOperator(GroupingOperator.open);
-
-  /// Adds a grouping operator to the where clause.
-  void closeBracket() => groupingOperator(GroupingOperator.close);
-
-  /// Adds a where condition to the where clause.
-  void equalsNumber(
-    ColumnReferenceOperand columnReferenceOperand,
-    num number,
-  ) =>
-      condition(
-        columnReferenceOperand,
-        ClauseOperator.equals,
-        NumberLiteralOperand(number),
-      );
-
-  /// Adds a where condition to the where clause.
-  void equalsText(ColumnReferenceOperand columnReferenceOperand, String text) =>
-      condition(
-        columnReferenceOperand,
-        ClauseOperator.equals,
-        StringLiteralOperand(text),
-      );
-}
