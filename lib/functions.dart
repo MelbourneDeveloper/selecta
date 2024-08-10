@@ -1,3 +1,4 @@
+import 'package:selecta/model/join.dart';
 import 'package:selecta/model/model.dart';
 import 'package:selecta/model/order_by.dart';
 
@@ -52,6 +53,17 @@ String conditionToSQL(WhereCondition condition) =>
     '${getClauseOperatorSymbol(condition.clauseOperator)}'
     '${_operandToSQL(condition.rightOperand)}';
 
+/// Converts a list of [Join] to a SQL JOIN clause.
+String joinToSQL(List<Join> joins) => joins.map((join) {
+      final joinTypeStr = switch (join.type) {
+        JoinType.inner => 'INNER JOIN',
+        JoinType.left => 'LEFT JOIN',
+        JoinType.right => 'RIGHT JOIN',
+        JoinType.full => 'FULL JOIN',
+      };
+      return ' $joinTypeStr ${join.table} ON ${conditionToSQL(join.condition)}';
+    }).join();
+
 /// Converts an [Operand] to a SQL operand.
 String getClauseOperatorSymbol(ClauseOperator op) => switch (op) {
       ClauseOperator.equals => '=',
@@ -60,35 +72,6 @@ String getClauseOperatorSymbol(ClauseOperator op) => switch (op) {
       ClauseOperator.greaterThanEqualTo => '>=',
       ClauseOperator.lessThan => '<',
       ClauseOperator.lessThanEqualTo => '<=',
-    };
-
-/// This is an oversimplification. It may be slightly different for each
-/// db platform. However, it will be mostly the same for each platform and
-/// the key is only hooking into the platform specifics where necessary
-String toSQL(List<WhereClauseElement> where) =>
-    'WHERE ${_whereElementsToString(where)}';
-
-String _whereElementsToString(List<WhereClauseElement> elements) => elements
-    .map(
-      (element) => switch (element) {
-        final WhereCondition condition =>
-          '${_operandToString(condition.leftOperand)}'
-              '${getClauseOperatorSymbol(condition.clauseOperator)}'
-              '${_operandToString(condition.rightOperand)}',
-        final LogicalOperator logicalOperator =>
-          getLogicalOperatorSymbol(logicalOperator),
-        final GroupingOperator groupingOperator =>
-          getGroupingOperatorSymbol(groupingOperator),
-        final WhereClauseGroup group =>
-          '(${_whereElementsToString(group.elements)})',
-      },
-    )
-    .join(' ');
-
-String _operandToString(Operand operand) => switch (operand) {
-      final StringLiteralOperand strLiteral => '"${strLiteral.value}"',
-      final NumberLiteralOperand numLiteral => numLiteral.value.toString(),
-      final ColumnReferenceOperand colRef => colRef.value,
     };
 
 /// Converts a list of selected columns to a SQL SELECT clause

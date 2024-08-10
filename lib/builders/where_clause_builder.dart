@@ -24,9 +24,8 @@ class WhereClauseBuilder {
   }
 
   /// Builds the where clause.
-  List<WhereClauseElement> build() => _whereClause;
+  WhereClauseGroup build() => WhereClauseGroup(_whereClause);
 }
-
 
 /// An extension on [WhereClauseBuilder] that provides a fluent API for
 extension WhereClauseBuilderExtensions on WhereClauseBuilder {

@@ -2,7 +2,6 @@ import 'package:selecta/builders/oder_by_builder.dart';
 import 'package:selecta/builders/where_clause_builder.dart';
 import 'package:selecta/model/select_column.dart';
 import 'package:selecta/model/select_statement.dart';
-import 'package:selecta/model/where_clause_element.dart';
 
 /// Create a [SelectStatement] using a builder
 class SelectStatementBuilder {
@@ -37,7 +36,7 @@ class SelectStatementBuilder {
   SelectStatement build() => SelectStatement(
         from,
         _selectedColumns,
-        where: WhereClauseGroup(_whereClauseBuilder.build()),
+        where: _whereClauseBuilder.build(),
         orderBy: _orderByBuilder.build(),
       );
 }

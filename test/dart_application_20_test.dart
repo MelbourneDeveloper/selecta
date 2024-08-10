@@ -10,31 +10,33 @@ const id = ColumnReferenceOperand('ID');
 
 void main() {
   test('Go', () {
-    final whereClause = [
-      WhereCondition(
-        const ColumnReferenceOperand('NAME'),
-        ClauseOperator.equals,
-        StringLiteralOperand('JIM'),
-      ),
-      LogicalOperator.and,
-      GroupingOperator.open,
-      WhereCondition(
-        const ColumnReferenceOperand('ID'),
-        ClauseOperator.equals,
-        NumberLiteralOperand(123),
-      ),
-      LogicalOperator.or,
-      WhereCondition(
-        const ColumnReferenceOperand('ID'),
-        ClauseOperator.equals,
-        NumberLiteralOperand(321),
-      ),
-      GroupingOperator.close,
-    ];
+    final whereClause = WhereClauseGroup(
+      [
+        WhereCondition(
+          const ColumnReferenceOperand('NAME'),
+          ClauseOperator.equals,
+          StringLiteralOperand('JIM'),
+        ),
+        LogicalOperator.and,
+        GroupingOperator.open,
+        WhereCondition(
+          const ColumnReferenceOperand('ID'),
+          ClauseOperator.equals,
+          NumberLiteralOperand(123),
+        ),
+        LogicalOperator.or,
+        WhereCondition(
+          const ColumnReferenceOperand('ID'),
+          ClauseOperator.equals,
+          NumberLiteralOperand(321),
+        ),
+        GroupingOperator.close,
+      ],
+    );
 
-    final sql = toSQL(whereClause);
+    final sql = whereClauseGroupToSQL(whereClause);
 
-    expect(sql, 'WHERE NAME="JIM" AND ( ID=123 OR ID=321 )');
+    expect(sql, 'NAME="JIM" AND ( ID=123 OR ID=321 )');
   });
 
   test('Builder Go', () {
@@ -56,9 +58,9 @@ void main() {
       )
       ..closeBracket();
 
-    final sql = toSQL(builder.build());
+    final sql = whereClauseGroupToSQL(builder.build());
 
-    expect(sql, 'WHERE NAME="JIM" AND ( ID=123 OR ID=321 )');
+    expect(sql, 'NAME="JIM" AND ( ID=123 OR ID=321 )');
   });
 
   group('whereClauseGroupToSQL', () {
@@ -291,7 +293,7 @@ void main() {
       );
     });
 
-    //It's questionable what should happen here...
+    //It's questionable what should happen
     // test('Order by with quoted column names', () {
     //   final builder = SelectStatementBuilder(from: 'Weird Table')
     //     ..selectColumn('Weird Column')
