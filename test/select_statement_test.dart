@@ -4,17 +4,18 @@ import 'package:test/test.dart';
 
 void main() {
   test('Convert select all columns to SQL', () {
-    final selectedColumns = (SelectStatementBuilder()..selectAll()).build();
-    final sql = toSelectSQL(selectedColumns);
+    final selectedColumns =
+        (SelectStatementBuilder(from: 'users')..selectAll()).build();
+    final sql = toSelectSQL(selectedColumns.select);
     expect(sql, equals('SELECT *'));
   });
 
   test('Convert multiple columns to SQL', () {
-    final builder = SelectStatementBuilder()
+    final builder = SelectStatementBuilder(from: 'users')
       ..selectColumn('one')
       ..selectColumn('two');
     final selectedColumns = builder.build();
-    final sql = toSelectSQL(selectedColumns);
+    final sql = toSelectSQL(selectedColumns.select);
     expect(sql, equals('SELECT one, two'));
   });
 }
