@@ -93,7 +93,7 @@ void main() {
     },
   );
 
-    test('toSelectStatement parses basic SELECT', () {
+  test('toSelectStatement parses basic SELECT', () {
     const sql = 'SELECT id, name FROM users WHERE age > 18';
     final result = toSelectStatement(sql);
 

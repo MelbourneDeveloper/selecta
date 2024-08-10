@@ -181,8 +181,8 @@ void main() {
     test(
       'SELECT with INNER JOIN',
       () => testBidirectionalConversion(
-        'SELECT Orders.id, Customers.name FROM Orders '
-        'INNER JOIN Customers ON Orders.customer_id = Customers.id',
+        'SELECT Orders.id, Customers.name FROM Orders INNER JOIN Customers ON '
+        'Orders.customer_id=Customers.id',
         validateStatement: (ss) {
           expect(ss.joins.length, 1);
           expect(ss.joins.first.type, JoinType.inner);
@@ -195,9 +195,9 @@ void main() {
     test(
       'SELECT with LEFT JOIN and WHERE clause',
       () => testBidirectionalConversion(
-        'SELECT Products.name, Categories.name FROM Products LEFT '
-        'JOIN Categories ON Products.category_id = Categories.id WHERE '
-        'Products.price > 100',
+        'SELECT Products.name, Categories.name FROM Products '
+        'LEFT JOIN Categories ON Products.category_id=Categories.id '
+        'WHERE Products.price>100',
         validateStatement: (ss) {
           expect(ss.joins.length, 1);
           expect(ss.joins.first.type, JoinType.left);
@@ -212,9 +212,9 @@ void main() {
       'SELECT with multiple JOINs',
       () => testBidirectionalConversion(
         'SELECT Orders.id, Customers.name, Products.name FROM Orders '
-        'INNER JOIN Customers ON Orders.customer_id = Customers.id INNER '
-        'JOIN OrderItems ON Orders.id = OrderItems.order_id INNER JOIN Products'
-        ' ON OrderItems.product_id = Products.id',
+        'INNER JOIN Customers ON Orders.customer_id=Customers.id '
+        'INNER JOIN OrderItems ON Orders.id=OrderItems.order_id '
+        'INNER JOIN Products ON OrderItems.product_id=Products.id',
         validateStatement: (ss) {
           expect(ss.joins.length, 3);
           expect(ss.joins[0].type, JoinType.inner);
@@ -228,6 +228,7 @@ void main() {
       ),
     );
 
+    //TODO: fix this one
     test(
       'SELECT with JOIN, WHERE, and ORDER BY',
       () => testBidirectionalConversion(

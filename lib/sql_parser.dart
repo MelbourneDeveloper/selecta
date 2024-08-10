@@ -5,7 +5,6 @@ import 'package:selecta/model/order_by.dart';
 /// Converts a list of [SelectedColumn]s to a SQL SELECT statement.
 SelectStatement toSelectStatement(String sql) {
   final cleanSql = sql.trim();
-
   final clauses = _extractClauses(cleanSql);
 
   return SelectStatement(
@@ -21,7 +20,7 @@ SelectStatement toSelectStatement(String sql) {
 List<Join> parseJoinClauses(String joinClauses) => joinClauses.isEmpty
     ? []
     : RegExp(
-        r'\b(INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN|FULL\s+JOIN|JOIN)\s+(\w+)\s+ON\s+(.*?)(?=\b(?:INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN|FULL\s+JOIN|JOIN)\b|$)',
+        r'\b(INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN|FULL\s+JOIN|JOIN)\s+(\w+)\s+ON\s+(.*?)(?=\s+(?:INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN|FULL\s+JOIN|JOIN)\b|$)',
         caseSensitive: false,
         dotAll: true,
       )
@@ -157,18 +156,27 @@ Map<String, String> _extractClauses(String sql) {
   }
 
   // Handle JOIN clauses
-  final joinClauses = joinKeywords
-      .expand(
-        (keyword) => RegExp(
-          '$keyword\\s+.*?(?=${clauseKeywords.join('|')}|\$)',
-          caseSensitive: false,
-          dotAll: true,
-        ).allMatches(sql).map((m) => m.group(0)!),
-      )
-      .join(' ');
+  final joinStart = findNextKeywordIndex(0, joinKeywords);
+  if (joinStart < sql.length) {
+    final joinEnd = findNextKeywordIndex(joinStart, ['WHERE', 'ORDER BY']);
+    result['JOIN'] = sql.substring(joinStart, joinEnd).trim();
 
-  if (joinClauses.isNotEmpty) {
-    result['JOIN'] = joinClauses;
+    // Adjust WHERE and ORDER BY if they come after JOIN
+    if (joinEnd < sql.length) {
+      final remainingClauses = sql.substring(joinEnd);
+      final whereMatch = RegExp(r'\bWHERE\b', caseSensitive: false)
+          .firstMatch(remainingClauses);
+      final orderByMatch = RegExp(r'\bORDER BY\b', caseSensitive: false)
+          .firstMatch(remainingClauses);
+
+      if (whereMatch != null) {
+        result['WHERE'] = remainingClauses.substring(whereMatch.end).trim();
+      }
+      if (orderByMatch != null) {
+        result['ORDER BY'] =
+            remainingClauses.substring(orderByMatch.end).trim();
+      }
+    }
   }
 
   return result;
