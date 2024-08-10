@@ -75,7 +75,7 @@ String getClauseOperatorSymbol(ClauseOperator op) => switch (op) {
     };
 
 /// Converts a list of selected columns to a SQL SELECT clause
-String toSelectSQL(List<SelectedColumn> selectedColumns) =>
+String selectColumnsToSql(List<SelectedColumn> selectedColumns) =>
     'SELECT ${selectedColumns.map(
           (column) => switch (column) {
             // ignore: unused_local_variable
@@ -90,18 +90,6 @@ String toSelectSQL(List<SelectedColumn> selectedColumns) =>
 String _columnReferenceToString(ColumnReference columnReference) =>
     '${columnReference.tableName != null ? '${columnReference.tableName}'
         '.' : ''}${columnReference.columnName}';
-
-/// Converts a [GroupingOperator] to a SQL grouping operator symbol.
-String getGroupingOperatorSymbol(GroupingOperator op) => switch (op) {
-      GroupingOperator.open => '(',
-      GroupingOperator.close => ')',
-    };
-
-/// Converts a [LogicalOperator] to a SQL logical operator symbol.
-String getLogicalOperatorSymbol(LogicalOperator op) => switch (op) {
-      LogicalOperator.and => 'AND',
-      LogicalOperator.or => 'OR',
-    };
 
 /// Converts a [Operand] to a string.
 String _operandToSQL(Operand operand) => switch (operand) {

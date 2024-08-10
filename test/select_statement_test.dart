@@ -6,7 +6,7 @@ void main() {
   test('Convert select all columns to SQL', () {
     final selectedColumns =
         (SelectStatementBuilder(from: 'users')..selectAll()).build();
-    final sql = toSelectSQL(selectedColumns.select);
+    final sql = selectColumnsToSql(selectedColumns.select);
     expect(sql, equals('SELECT *'));
   });
 
@@ -15,7 +15,7 @@ void main() {
       ..selectColumn('one')
       ..selectColumn('two');
     final selectedColumns = builder.build();
-    final sql = toSelectSQL(selectedColumns.select);
+    final sql = selectColumnsToSql(selectedColumns.select);
     expect(sql, equals('SELECT one, two'));
   });
 }
