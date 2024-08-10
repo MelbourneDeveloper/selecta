@@ -1,3 +1,5 @@
+import 'package:selecta/model/select_column.dart';
+
 /// Represents an ORDER BY clause element
 sealed class OrderByElement {}
 
@@ -9,6 +11,9 @@ class OrderByColumn implements OrderByElement {
     this.tableName,
     this.direction = SortDirection.ascending,
   });
+
+  /// TODO: we should be able to use [ColumnReference]
+  /// instead of [columnName] and [tableName]
 
   /// The name of the column.
   final String columnName;
