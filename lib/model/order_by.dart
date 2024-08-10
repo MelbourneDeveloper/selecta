@@ -52,7 +52,8 @@ enum SortDirection {
   descending,
 }
 
-extension Asdasd on OrderByColumn {
+/// Extensions on [SortDirection].
+extension OrderByColumnExtensions on OrderByColumn {
   /// Converts the [OrderByColumn] to an SQL string.
   String toSql() => direction == SortDirection.ascending ? 'ASC' : 'DESC';
 }
