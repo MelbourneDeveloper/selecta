@@ -135,10 +135,17 @@ JoinType _parseJoinType(String joinTypeStr) {
 Map<String, String> _extractClauses(String sql) {
   final upperSql = sql.toUpperCase();
   final clauseKeywords = ['SELECT', 'FROM', 'WHERE', 'ORDER BY'];
+  final joinKeywords = [
+    'INNER JOIN',
+    'LEFT JOIN',
+    'RIGHT JOIN',
+    'FULL JOIN',
+    'JOIN',
+  ];
 
   final result = <String, String>{};
 
-  int findNextKeywordIndex(int startIndex) => clauseKeywords
+  int findNextKeywordIndex(int startIndex, List<String> keywords) => keywords
       .map((k) => upperSql.indexOf(k, startIndex))
       .where((idx) => idx != -1)
       .fold(sql.length, (min, idx) => idx < min ? idx : min);
@@ -147,20 +154,34 @@ Map<String, String> _extractClauses(String sql) {
   for (final keyword in clauseKeywords) {
     final start = upperSql.indexOf(keyword, lastEndIndex);
     if (start != -1) {
-      final end = findNextKeywordIndex(start + keyword.length);
+      final nextClauseIndex = findNextKeywordIndex(
+        start + keyword.length,
+        clauseKeywords,
+      );
+      final nextJoinIndex = findNextKeywordIndex(
+        start + keyword.length,
+        joinKeywords,
+      );
+
+      final end = keyword == 'FROM'
+          ? (nextJoinIndex < nextClauseIndex ? nextJoinIndex : nextClauseIndex)
+          : nextClauseIndex;
+          
       result[keyword] = sql.substring(start + keyword.length, end).trim();
       lastEndIndex = end;
     }
   }
 
   // Handle JOIN clauses
-  final joinPattern = RegExp(
-    r'(INNER JOIN|LEFT JOIN|RIGHT JOIN|FULL JOIN)\s+.*?(?=SELECT|FROM|WHERE|ORDER BY|$)',
-    caseSensitive: false,
-    dotAll: true,
-  );
-
-  final joinClauses = joinPattern.allMatches(sql).map((m) => m[0]!).join(' ');
+  final joinClauses = joinKeywords
+      .expand(
+        (keyword) => RegExp(
+          '$keyword\\s+.*?(?=${clauseKeywords.join('|')}|\$)',
+          caseSensitive: false,
+          dotAll: true,
+        ).allMatches(sql).map((m) => m.group(0)!),
+      )
+      .join(' ');
 
   if (joinClauses.isNotEmpty) {
     result['JOIN'] = joinClauses;
