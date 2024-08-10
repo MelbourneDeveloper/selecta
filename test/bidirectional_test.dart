@@ -1,4 +1,5 @@
 import 'package:selecta/functions.dart';
+import 'package:selecta/model/join.dart';
 import 'package:selecta/model/model.dart';
 import 'package:selecta/model/order_by.dart';
 import 'package:selecta/sql_parser.dart';
@@ -15,7 +16,7 @@ void testBidirectionalConversion(
 
   validateStatement?.call(selectStatement);
 
-  final actualSql = statementToSQL(selectStatement);
+  final actualSql = statementToSql(selectStatement);
 
   expect(
     actualSql,
@@ -175,4 +176,77 @@ void main() {
       },
     ),
   );
+
+  group('Joins', () {
+    test(
+      'SELECT with INNER JOIN',
+      () => testBidirectionalConversion(
+        'SELECT Orders.id, Customers.name FROM Orders INNER JOIN Customers'
+        ' ON Orders.customer_id = Customers.id',
+        validateStatement: (ss) {
+          expect(ss.joins.length, 1);
+          expect(ss.joins.first.type, JoinType.inner);
+          expect(ss.joins.first.table, 'Customers');
+          expect(ss.from, 'Orders');
+        },
+      ),
+    );
+
+    test(
+      'SELECT with LEFT JOIN and WHERE clause',
+      () => testBidirectionalConversion(
+        'SELECT Products.name, Categories.name FROM Products LEFT '
+        'JOIN Categories ON Products.category_id = Categories.id WHERE '
+        'Products.price > 100',
+        validateStatement: (ss) {
+          expect(ss.joins.length, 1);
+          expect(ss.joins.first.type, JoinType.left);
+          expect(ss.joins.first.table, 'Categories');
+          expect(ss.from, 'Products');
+          expect(ss.where.elements.length, 1);
+        },
+      ),
+    );
+
+    test(
+      'SELECT with multiple JOINs',
+      () => testBidirectionalConversion(
+        'SELECT Orders.id, Customers.name, Products.name FROM Orders '
+        'INNER JOIN Customers ON Orders.customer_id = Customers.id INNER '
+        'JOIN OrderItems ON Orders.id = OrderItems.order_id INNER JOIN Products'
+        ' ON OrderItems.product_id = Products.id',
+        validateStatement: (ss) {
+          expect(ss.joins.length, 3);
+          expect(ss.joins[0].type, JoinType.inner);
+          expect(ss.joins[0].table, 'Customers');
+          expect(ss.joins[1].type, JoinType.inner);
+          expect(ss.joins[1].table, 'OrderItems');
+          expect(ss.joins[2].type, JoinType.inner);
+          expect(ss.joins[2].table, 'Products');
+          expect(ss.from, 'Orders');
+        },
+      ),
+    );
+
+    test(
+      'SELECT with JOIN, WHERE, and ORDER BY',
+      () => testBidirectionalConversion(
+        'SELECT Employees.name, Departments.name FROM Employees INNER '
+        'JOIN Departments ON Employees.department_id = Departments.id '
+        'WHERE Employees.salary > 50000 ORDER BY Employees.name ASC',
+        validateStatement: (ss) {
+          expect(ss.joins.length, 1);
+          expect(ss.joins.first.type, JoinType.inner);
+          expect(ss.joins.first.table, 'Departments');
+          expect(ss.from, 'Employees');
+          expect(ss.where.elements.length, 1);
+          expect(ss.orderBy.length, 1);
+          final orderByColumn = ss.orderBy.first as OrderByColumn;
+          expect(orderByColumn.columnName, 'name');
+          expect(orderByColumn.tableName, 'Employees');
+          expect(orderByColumn.direction, SortDirection.ascending);
+        },
+      ),
+    );
+  });
 }

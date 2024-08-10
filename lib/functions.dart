@@ -3,7 +3,7 @@ import 'package:selecta/model/model.dart';
 import 'package:selecta/model/order_by.dart';
 
 /// Converts a [SelectStatement] to a SQL SELECT statement.
-String statementToSQL(SelectStatement statement) {
+String statementToSql(SelectStatement statement) {
   final selectClause = statement.select
       .map(
         (col) => switch (col) {
@@ -15,10 +15,12 @@ String statementToSQL(SelectStatement statement) {
       )
       .join(', ');
 
+  final joinClause = joinToSQL(statement.joins);
   final whereClause = whereClauseGroupToSQL(statement.where);
   final orderByClause = orderByToSQL(statement.orderBy);
 
   return 'SELECT $selectClause FROM ${statement.from}'
+      '$joinClause'
       '${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}'
       '${orderByClause.isNotEmpty ? ' ORDER BY $orderByClause' : ''}';
 }

@@ -128,7 +128,7 @@ void main() {
         ..orderBy.asc('name');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT name FROM Users ORDER BY name ASC',
       );
     });
@@ -139,7 +139,7 @@ void main() {
         ..orderBy.desc('price');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT price FROM Products ORDER BY price DESC',
       );
     });
@@ -152,7 +152,7 @@ void main() {
         ..orderBy.asc('firstName');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT lastName, firstName FROM Employees '
         'ORDER BY lastName ASC, firstName ASC',
       );
@@ -166,7 +166,7 @@ void main() {
         ..orderBy.asc('total');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT orderDate, total FROM Orders '
         'ORDER BY orderDate DESC, total ASC',
       );
@@ -178,7 +178,7 @@ void main() {
         ..orderBy.ascWithTable('Users', 'name');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT Users.name FROM Users ORDER BY Users.name ASC',
       );
     });
@@ -191,7 +191,7 @@ void main() {
         ..orderBy.ascWithTable('Customers', 'name');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT Orders.orderDate, Customers.name FROM '
         'Orders ORDER BY Orders.orderDate DESC, Customers.name ASC',
       );
@@ -206,7 +206,7 @@ void main() {
         ..orderBy.desc('price');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT name, price FROM Products WHERE category="Electronics" '
         'ORDER BY price DESC',
       );
@@ -232,7 +232,7 @@ void main() {
         ..orderBy.asc('name');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT name, salary FROM Employees WHERE ( department="Sales" OR '
         'department="Marketing" ) AND salary>50000 '
         'ORDER BY salary DESC, name ASC',
@@ -246,7 +246,7 @@ void main() {
         ..orderBy.desc('lastLoginDate');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT * FROM Users ORDER BY registrationDate ASC, lastLoginDate DESC',
       );
     });
@@ -255,7 +255,7 @@ void main() {
       final builder = SelectStatementBuilder(from: 'Logs')
         ..selectColumn('message');
       final statement = builder.build();
-      expect(statementToSQL(statement), 'SELECT message FROM Logs');
+      expect(statementToSql(statement), 'SELECT message FROM Logs');
     });
 
     test('Order by with repeated columns (should allow and not deduplicate)',
@@ -266,7 +266,7 @@ void main() {
         ..orderBy.desc('amount');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT amount FROM Transactions ORDER BY amount ASC, amount DESC',
       );
     });
@@ -277,7 +277,7 @@ void main() {
         ..orderBy.asc('name');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT Name FROM Users ORDER BY name ASC',
       );
     });
@@ -288,7 +288,7 @@ void main() {
         ..orderBy.desc('1stColumn');
       final statement = builder.build();
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT 1stColumn FROM Data ORDER BY 1stColumn DESC',
       );
     });
@@ -317,7 +317,7 @@ void main() {
       final expectedOrderBy =
           List.generate(20, (i) => 'col${i + 1} ASC').join(', ');
       expect(
-        statementToSQL(statement),
+        statementToSql(statement),
         'SELECT $expectedColumns FROM BigTable ORDER BY $expectedOrderBy',
       );
     });
