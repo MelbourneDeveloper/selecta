@@ -1,5 +1,6 @@
 import 'package:selecta/functions.dart';
 import 'package:selecta/model/model.dart';
+import 'package:selecta/model/order_by.dart';
 import 'package:selecta/sql_parser.dart';
 import 'package:test/test.dart';
 
@@ -154,12 +155,16 @@ void main() {
   //   }),
   // );
 
-  //TODO: order by
-  // test(
-  //   'SELECT with ORDER BY and LIMIT',
-  //   () => testBidirectionalConversion(
-  // ignore: lines_longer_than_80_chars
-  //     '''SELECT name, age FROM Students WHERE age >= 18 ORDER BY age DESC LIMIT 10''',
-  //   ),
-  // );
+  test(
+    'SELECT with ORDER BY and LIMIT',
+    () => testBidirectionalConversion(
+      '''SELECT name, age FROM Students WHERE age>=18 ORDER BY age DESC''',
+      validateStatement: (selectStatement) {
+        expect(selectStatement.orderBy.length, 1);
+        final orderByColumn = selectStatement.orderBy.first as OrderByColumn;
+        expect(orderByColumn.columnName, 'age');
+        expect(orderByColumn.direction, SortDirection.descending);
+      },
+    ),
+  );
 }
