@@ -18,32 +18,22 @@ SelectStatement toSelectStatement(String sql) {
 }
 
 /// Parse the JOIN clauses of a SQL SELECT statement.
-List<Join> parseJoinClauses(String joinClauses) {
-  if (joinClauses.isEmpty) return [];
-
-  final joins = <Join>[];
-  final joinRegex = RegExp(
-    r'\b(INNER|LEFT|RIGHT|FULL)?\s*JOIN\s+(\w+)\s+ON\s+(.+?)(?=\s+(?:INNER|LEFT|RIGHT|FULL)?\s*JOIN|$)',
-    caseSensitive: false,
-    dotAll: true,
-  );
-
-  for (final match in joinRegex.allMatches(joinClauses)) {
-    final joinType = _parseJoinType(match.group(1) ?? '');
-    final tableName = match.group(2)!.trim();
-    final condition = parseWhereClause(match.group(3)!.trim());
-
-    joins.add(
-      Join(
-        type: joinType,
-        table: tableName,
-        on: condition,
-      ),
-    );
-  }
-
-  return joins;
-}
+List<Join> parseJoinClauses(String joinClauses) => joinClauses.isEmpty
+    ? []
+    : RegExp(
+        r'\b(INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN|FULL\s+JOIN|JOIN)\s+(\w+)\s+ON\s+(.*?)(?=\b(?:INNER\s+JOIN|LEFT\s+JOIN|RIGHT\s+JOIN|FULL\s+JOIN|JOIN)\b|$)',
+        caseSensitive: false,
+        dotAll: true,
+      )
+        .allMatches(joinClauses)
+        .map(
+          (match) => Join(
+            type: _parseJoinType(match.group(1)!.split(RegExp(r'\s+'))[0]),
+            table: match.group(2)!,
+            on: parseWhereClause(match.group(3)!.trim()),
+          ),
+        )
+        .toList();
 
 /// Parse the ORDER BY clause of a SQL SELECT statement.
 List<OrderByElement> parseOrderByClause(String orderByClause) =>
@@ -116,21 +106,15 @@ WhereClauseGroup parseWhereClause(String whereClause) {
   return WhereClauseGroup(elements);
 }
 
-JoinType _parseJoinType(String joinTypeStr) {
-  switch (joinTypeStr.trim().toUpperCase()) {
-    case '':
-    case 'INNER':
-      return JoinType.inner;
-    case 'LEFT':
-      return JoinType.left;
-    case 'RIGHT':
-      return JoinType.right;
-    case 'FULL':
-      return JoinType.full;
-    default:
-      throw FormatException('Unknown join type: $joinTypeStr');
-  }
-}
+JoinType _parseJoinType(String joinTypeStr) =>
+    switch (joinTypeStr.trim().toUpperCase()) {
+      'INNER' => JoinType.inner,
+      'LEFT' => JoinType.left,
+      'RIGHT' => JoinType.right,
+      'FULL' => JoinType.full,
+      'JOIN' => JoinType.inner,
+      _ => throw FormatException('Unknown join type: $joinTypeStr'),
+    };
 
 Map<String, String> _extractClauses(String sql) {
   final upperSql = sql.toUpperCase();
@@ -166,7 +150,7 @@ Map<String, String> _extractClauses(String sql) {
       final end = keyword == 'FROM'
           ? (nextJoinIndex < nextClauseIndex ? nextJoinIndex : nextClauseIndex)
           : nextClauseIndex;
-          
+
       result[keyword] = sql.substring(start + keyword.length, end).trim();
       lastEndIndex = end;
     }
