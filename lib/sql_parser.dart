@@ -15,30 +15,7 @@ SelectStatement toSelectStatement(String sql) {
   );
 }
 
-Map<String, String> _extractClauses(String sql) {
-  final upperSql = sql.toUpperCase();
-  final clauseKeywords = ['SELECT', 'FROM', 'WHERE', 'ORDER BY'];
-
-  return Map.fromEntries(
-    clauseKeywords.map((keyword) {
-      final start = upperSql.indexOf(keyword);
-      if (start == -1) return MapEntry(keyword, '');
-
-      final nextKeywordIndex = clauseKeywords
-          .skip(clauseKeywords.indexOf(keyword) + 1)
-          .map((k) => upperSql.indexOf(k, start + keyword.length))
-          .where((idx) => idx != -1)
-          .fold<int?>(null, (min, idx) => min == null || idx < min ? idx : min);
-
-      final end = nextKeywordIndex ?? sql.length - 1;
-      return MapEntry(
-        keyword,
-        sql.substring(start + keyword.length, end).trim(),
-      );
-    }),
-  );
-}
-
+/// Parse the ORDER BY clause of a SQL SELECT statement.
 List<OrderByElement> parseOrderByClause(String orderByClause) =>
     orderByClause.isEmpty
         ? []
@@ -75,7 +52,7 @@ WhereClauseGroup parseWhereClause(String whereClause) {
   }
 
   final elements = <WhereClauseElement>[];
-  final tokens = tokenizeWhereClause(whereClause);
+  final tokens = _tokenizeWhereClause(whereClause);
 
   for (var i = 0; i < tokens.length; i++) {
     switch (tokens[i].toUpperCase()) {
@@ -109,8 +86,32 @@ WhereClauseGroup parseWhereClause(String whereClause) {
   return WhereClauseGroup(elements);
 }
 
+Map<String, String> _extractClauses(String sql) {
+  final upperSql = sql.toUpperCase();
+  final clauseKeywords = ['SELECT', 'FROM', 'WHERE', 'ORDER BY'];
+
+  return Map.fromEntries(
+    clauseKeywords.map((keyword) {
+      final start = upperSql.indexOf(keyword);
+      if (start == -1) return MapEntry(keyword, '');
+
+      final nextKeywordIndex = clauseKeywords
+          .skip(clauseKeywords.indexOf(keyword) + 1)
+          .map((k) => upperSql.indexOf(k, start + keyword.length))
+          .where((idx) => idx != -1)
+          .fold<int?>(null, (min, idx) => min == null || idx < min ? idx : min);
+
+      final end = nextKeywordIndex ?? sql.length - 1;
+      return MapEntry(
+        keyword,
+        sql.substring(start + keyword.length, end).trim(),
+      );
+    }),
+  );
+}
+
 /// Tokenizes a where clause string into individual tokens.
-List<String> tokenizeWhereClause(String whereClause) =>
+List<String> _tokenizeWhereClause(String whereClause) =>
     // Split the where clause into tokens, preserving quoted strings
     whereClause
         .splitMapJoin(
