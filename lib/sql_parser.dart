@@ -40,8 +40,13 @@ List<OrderByElement> parseOrderByClause(String orderByClause) =>
         ? []
         : orderByClause.split(',').map((column) {
             final parts = column.trim().split(RegExp(r'\s+'));
+            final columnParts = parts[0].split('.');
+            final columnName =
+                columnParts.length > 1 ? columnParts[1] : columnParts[0];
+            final tableName = columnParts.length > 1 ? columnParts[0] : null;
             return OrderByColumn(
-              parts[0],
+              columnName,
+              tableName: tableName,
               direction: parts.length > 1 && parts[1].toUpperCase() == 'DESC'
                   ? SortDirection.descending
                   : SortDirection.ascending,

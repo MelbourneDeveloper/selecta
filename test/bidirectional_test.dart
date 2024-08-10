@@ -232,9 +232,9 @@ void main() {
     test(
       'SELECT with JOIN, WHERE, and ORDER BY',
       () => testBidirectionalConversion(
-        'SELECT Employees.name, Departments.name FROM Employees INNER '
-        'JOIN Departments ON Employees.department_id = Departments.id '
-        'WHERE Employees.salary > 50000 ORDER BY Employees.name ASC',
+        'SELECT Employees.name, Departments.name FROM Employees '
+        'INNER JOIN Departments ON Employees.department_id=Departments.id '
+        'WHERE Employees.salary>50000 ORDER BY Employees.name ASC',
         validateStatement: (ss) {
           expect(ss.joins.length, 1);
           expect(ss.joins.first.type, JoinType.inner);
