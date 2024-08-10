@@ -46,3 +46,8 @@ enum SortDirection {
   /// Sort in descending order
   descending,
 }
+
+extension Asdasd on OrderByColumn {
+  /// Converts the [OrderByColumn] to an SQL string.
+  String toSql() => direction == SortDirection.ascending ? 'ASC' : 'DESC';
+}

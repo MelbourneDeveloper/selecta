@@ -1,4 +1,5 @@
 import 'package:selecta/model/model.dart';
+import 'package:selecta/model/order_by.dart';
 
 /// Converts a [SelectStatement] to a SQL SELECT statement.
 String statementToSQL(SelectStatement statement) {
@@ -14,10 +15,23 @@ String statementToSQL(SelectStatement statement) {
       .join(', ');
 
   final whereClause = whereClauseGroupToSQL(statement.where);
+  final orderByClause = orderByToSQL(statement.orderBy);
 
   return 'SELECT $selectClause FROM ${statement.from}'
-      '${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}';
+      '${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}'
+      '${orderByClause.isNotEmpty ? ' ORDER BY $orderByClause' : ''}';
 }
+
+/// Converts a list of [OrderByElement] to a SQL ORDER BY clause.
+String orderByToSQL(List<OrderByElement> orderBy) => orderBy
+    .map(
+      (element) => switch (element) {
+        OrderByColumn() =>
+          '${element.tableName != null ? '${element.tableName}.' : ''}'
+              '${element.columnName} ${element.toSql()}',
+      },
+    )
+    .join(', ');
 
 /// Converts a [WhereClauseGroup] to a SQL WHERE clause.
 String whereClauseGroupToSQL(WhereClauseGroup group) => group.elements
