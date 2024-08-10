@@ -2,7 +2,6 @@ import 'package:selecta/model/where_clause_element.dart';
 
 /// Enum representing different types of SQL joins
 enum JoinType {
-
   /// inner join
   inner,
 
@@ -22,7 +21,7 @@ class Join {
   const Join({
     required this.type,
     required this.table,
-    required this.condition,
+    required this.on,
   });
 
   /// The type of join.
@@ -32,7 +31,7 @@ class Join {
   final String table;
 
   /// The condition for the join.
-  final WhereCondition condition;
+  final WhereClauseGroup on;
 
   @override
   bool operator ==(Object other) =>
@@ -40,12 +39,11 @@ class Join {
       other is Join &&
           type == other.type &&
           table == other.table &&
-          condition == other.condition;
+          on == other.on;
 
   @override
-  int get hashCode => Object.hash(type, table, condition);
+  int get hashCode => Object.hash(type, table, on);
 
   @override
-  String toString() =>
-      'Join(type: $type, table: $table, condition: $condition)';
+  String toString() => 'Join(type: $type, table: $table, condition: $on)';
 }

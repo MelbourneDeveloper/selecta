@@ -63,7 +63,7 @@ String joinToSQL(List<Join> joins) => joins.map((join) {
         JoinType.right => 'RIGHT JOIN',
         JoinType.full => 'FULL JOIN',
       };
-      return ' $joinTypeStr ${join.table} ON ${conditionToSQL(join.condition)}';
+      return ' $joinTypeStr ${join.table} ON ${whereClauseGroupToSQL(join.on)}';
     }).join();
 
 /// Converts an [Operand] to a SQL operand.

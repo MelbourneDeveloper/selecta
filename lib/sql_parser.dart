@@ -1,3 +1,4 @@
+import 'package:selecta/model/join.dart';
 import 'package:selecta/model/model.dart';
 import 'package:selecta/model/order_by.dart';
 
@@ -12,8 +13,48 @@ SelectStatement toSelectStatement(String sql) {
     parseSelectedColumns(clauses['SELECT'] ?? ''),
     where: parseWhereClause(clauses['WHERE'] ?? ''),
     orderBy: parseOrderByClause(clauses['ORDER BY'] ?? ''),
+    joins: parseJoinClauses(clauses['JOIN'] ?? ''),
   );
 }
+
+/// Parse the JOIN clauses of a SQL SELECT statement.
+List<Join> parseJoinClauses(String joinClauses) {
+  if (joinClauses.isEmpty) return [];
+
+  final joins = <Join>[];
+  final joinParts =
+      joinClauses.split(RegExp(r'\b(INNER|LEFT|RIGHT|FULL)\s+JOIN\b'));
+
+  for (var i = 1; i < joinParts.length; i += 2) {
+    final joinType = _parseJoinType(joinParts[i].trim());
+    final joinDetails = joinParts[i + 1].trim().split('ON');
+    if (joinDetails.length != 2) {
+      throw FormatException('Invalid JOIN clause: ${joinParts[i + 1]}');
+    }
+
+    final tableName = joinDetails[0].trim();
+    final condition = parseWhereClause(joinDetails[1].trim());
+
+    joins.add(
+      Join(
+        type: joinType,
+        table: tableName,
+        on: condition,
+      ),
+    );
+  }
+
+  return joins;
+}
+
+JoinType _parseJoinType(String joinTypeStr) =>
+    switch (joinTypeStr.toUpperCase()) {
+      'INNER' => JoinType.inner,
+      'LEFT' => JoinType.left,
+      'RIGHT' => JoinType.right,
+      'FULL' => JoinType.full,
+      _ => throw FormatException('Unknown join type: $joinTypeStr'),
+    };
 
 /// Parse the ORDER BY clause of a SQL SELECT statement.
 List<OrderByElement> parseOrderByClause(String orderByClause) =>
@@ -88,7 +129,7 @@ WhereClauseGroup parseWhereClause(String whereClause) {
 
 Map<String, String> _extractClauses(String sql) {
   final upperSql = sql.toUpperCase();
-  final clauseKeywords = ['SELECT', 'FROM', 'WHERE', 'ORDER BY'];
+  final clauseKeywords = ['SELECT', 'FROM', 'JOIN', 'WHERE', 'ORDER BY'];
 
   return Map.fromEntries(
     clauseKeywords.map((keyword) {
