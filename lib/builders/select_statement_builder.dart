@@ -6,6 +6,8 @@ import 'package:selecta/model/where_clause_element.dart';
 
 /// Create a [SelectStatement] using a builder
 class SelectStatementBuilder {
+
+  /// Create a new [SelectStatementBuilder] with a FROM clause
   SelectStatementBuilder({required this.from});
 
   final List<SelectedColumn> _selectedColumns = [];
