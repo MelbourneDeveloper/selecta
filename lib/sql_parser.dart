@@ -191,39 +191,3 @@ Operand _parseOperand(String value) =>
         : num.tryParse(value) != null
             ? NumberLiteralOperand(num.parse(value))
             : ColumnReferenceOperand(value);
-
-/// Converts a [WhereClauseGroup] to a SQL WHERE clause string.
-String conditionToSQL(WhereCondition condition) {
-  final operator = _clauseOperatorToStringSymbol(condition.clauseOperator);
-  return '${_operandToSQL(condition.leftOperand)}'
-      '$operator${_operandToSQL(condition.rightOperand)}';
-}
-
-/// Converts a [Operand] to a string.
-String _operandToSQL(Operand operand) {
-  if (operand is StringLiteralOperand) {
-    return '"${operand.value}"';
-  } else if (operand is NumberLiteralOperand) {
-    return operand.value.toString();
-  } else if (operand is ColumnReferenceOperand) {
-    return operand.value;
-  }
-  throw ArgumentError('Unknown Operand type');
-}
-
-String _clauseOperatorToStringSymbol(ClauseOperator op) {
-  switch (op) {
-    case ClauseOperator.equals:
-      return '=';
-    case ClauseOperator.notEquals:
-      return '!=';
-    case ClauseOperator.greaterThan:
-      return '>';
-    case ClauseOperator.greaterThanEqualTo:
-      return '>=';
-    case ClauseOperator.lessThan:
-      return '<';
-    case ClauseOperator.lessThanEqualTo:
-      return '<=';
-  }
-}

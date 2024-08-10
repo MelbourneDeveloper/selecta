@@ -46,10 +46,11 @@ String whereClauseGroupToSQL(WhereClauseGroup group) => group.elements
     )
     .join(' ');
 
-/// Converts a [WhereCondition] to a SQL WHERE condition.
-String conditionToSQL(WhereCondition condition) => '${condition.leftOperand}'
+/// Converts a [WhereClauseGroup] to a SQL WHERE clause string.
+String conditionToSQL(WhereCondition condition) =>
+    '${_operandToSQL(condition.leftOperand)}'
     '${getClauseOperatorSymbol(condition.clauseOperator)}'
-    '${condition.rightOperand}';
+    '${_operandToSQL(condition.rightOperand)}';
 
 /// Converts an [Operand] to a SQL operand.
 String getClauseOperatorSymbol(ClauseOperator op) => switch (op) {
@@ -118,3 +119,15 @@ String getLogicalOperatorSymbol(LogicalOperator op) => switch (op) {
       LogicalOperator.and => 'AND',
       LogicalOperator.or => 'OR',
     };
+
+/// Converts a [Operand] to a string.
+String _operandToSQL(Operand operand) {
+  if (operand is StringLiteralOperand) {
+    return '"${operand.value}"';
+  } else if (operand is NumberLiteralOperand) {
+    return operand.value.toString();
+  } else if (operand is ColumnReferenceOperand) {
+    return operand.value;
+  }
+  throw ArgumentError('Unknown Operand type');
+}
