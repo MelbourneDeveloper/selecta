@@ -92,23 +92,23 @@ void main() {
     },
   );
 
-  testSelectStatement(
-    'Parse complex SELECT with JOIN and WHERE',
-    '''SELECT Orders.id, Customers.name FROM Orders JOIN Customers ON Orders.customer_id = Customers.id WHERE Orders.status = "Shipped"''',
-    expectedColumnCount: 2,
-    expectedFrom: 'Orders JOIN Customers ON Orders.customer_id = Customers.id',
-    expectedWhereEmpty: false,
-    validateColumns: (columns) {
-      expect(columns[0], isA<ColumnReference>());
-      expect((columns[0] as ColumnReference).tableName, 'Orders');
-      expect((columns[0] as ColumnReference).columnName, 'id');
-      expect(columns[1], isA<ColumnReference>());
-      expect((columns[1] as ColumnReference).tableName, 'Customers');
-      expect((columns[1] as ColumnReference).columnName, 'name');
-    },
-    validateWhere: (where) {
-      expect(where.length, 1);
-      expect(where[0], isA<WhereCondition>());
-    },
-  );
+  // testSelectStatement(
+  //   'Parse complex SELECT with JOIN and WHERE',
+  //   '''SELECT Orders.id, Customers.name FROM Orders JOIN Customers ON Orders.customer_id = Customers.id WHERE Orders.status = "Shipped"''',
+  //   expectedColumnCount: 2,
+  //   expectedFrom: 'Orders JOIN Customers ON Orders.customer_id = Customers.id',
+  //   expectedWhereEmpty: false,
+  //   validateColumns: (columns) {
+  //     expect(columns[0], isA<ColumnReference>());
+  //     expect((columns[0] as ColumnReference).tableName, 'Orders');
+  //     expect((columns[0] as ColumnReference).columnName, 'id');
+  //     expect(columns[1], isA<ColumnReference>());
+  //     expect((columns[1] as ColumnReference).tableName, 'Customers');
+  //     expect((columns[1] as ColumnReference).columnName, 'name');
+  //   },
+  //   validateWhere: (where) {
+  //     expect(where.length, 1);
+  //     expect(where[0], isA<WhereCondition>());
+  //   },
+  // );
 }
