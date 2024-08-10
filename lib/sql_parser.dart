@@ -130,6 +130,7 @@ Map<String, String> _extractClauses(String sql) {
     'FULL JOIN',
     'JOIN',
   ];
+  final allKeywords = [...clauseKeywords, ...joinKeywords];
 
   final result = <String, String>{};
 
@@ -142,21 +143,11 @@ Map<String, String> _extractClauses(String sql) {
   for (final keyword in clauseKeywords) {
     final start = upperSql.indexOf(keyword, lastEndIndex);
     if (start != -1) {
-      final nextClauseIndex = findNextKeywordIndex(
-        start + keyword.length,
-        clauseKeywords,
-      );
-      final nextJoinIndex = findNextKeywordIndex(
-        start + keyword.length,
-        joinKeywords,
-      );
-
-      final end = keyword == 'FROM'
-          ? (nextJoinIndex < nextClauseIndex ? nextJoinIndex : nextClauseIndex)
-          : nextClauseIndex;
-
-      result[keyword] = sql.substring(start + keyword.length, end).trim();
-      lastEndIndex = end;
+      final nextKeywordIndex =
+          findNextKeywordIndex(start + keyword.length, allKeywords);
+      result[keyword] =
+          sql.substring(start + keyword.length, nextKeywordIndex).trim();
+      lastEndIndex = nextKeywordIndex;
     }
   }
 
@@ -175,7 +166,12 @@ Map<String, String> _extractClauses(String sql) {
           .firstMatch(remainingClauses);
 
       if (whereMatch != null) {
-        result['WHERE'] = remainingClauses.substring(whereMatch.end).trim();
+        result['WHERE'] = remainingClauses
+            .substring(
+              whereMatch.end,
+              orderByMatch?.start ?? remainingClauses.length,
+            )
+            .trim();
       }
       if (orderByMatch != null) {
         result['ORDER BY'] =
