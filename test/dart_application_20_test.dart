@@ -1,6 +1,6 @@
+import 'package:selecta/builders/where_clause_builder.dart';
 import 'package:selecta/functions.dart';
 import 'package:selecta/model/model.dart';
-import 'package:selecta/where_clause_builder.dart';
 import 'package:test/test.dart';
 
 const name = ColumnReferenceOperand('NAME');

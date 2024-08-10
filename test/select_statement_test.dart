@@ -1,5 +1,5 @@
+import 'package:selecta/builders/select_statement_builder.dart';
 import 'package:selecta/functions.dart';
-import 'package:selecta/select_statement_builder.dart';
 import 'package:test/test.dart';
 
 void main() {
