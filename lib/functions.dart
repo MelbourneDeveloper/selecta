@@ -45,16 +45,6 @@ String defaultAllClausesFormatter(AllClauses clauses) =>
     '${clauses.orderByClause.isNotEmpty ? ' ORDER BY '
         '${clauses.orderByClause}' : ''}';
 
-String customTabFormatter(AllClauses clauses) => [
-      'SELECT\n\t${clauses.selectClause.replaceAll(', ', ',\n\t')}',
-      'FROM\n\t${clauses.fromClause}',
-      if (clauses.joinClause.isNotEmpty)
-        clauses.joinClause.trim().replaceAll(' ', '\n'),
-      if (clauses.whereClause.isNotEmpty) 'WHERE\n\t${clauses.whereClause}',
-      if (clauses.orderByClause.isNotEmpty)
-        'ORDER BY\n\t${clauses.orderByClause.replaceAll(', ', ',\n\t')}',
-    ].join('\n');
-
 /// Converts a list of [SelectedColumn]s to a SQL SELECT statement.
 String defaultSelectFormatter(List<SelectedColumn> columns) =>
     columns.map(columnToSql).join(', ');
