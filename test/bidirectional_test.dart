@@ -179,6 +179,13 @@ void main() {
     'SELECT with WHERE clause mixing AND and OR without parentheses',
     () => testBidirectionalConversion(
       '''SELECT * FROM Customers WHERE country="USA" AND (state="California" OR state="New York" )''',
+      validateStatement: (ss) {
+        expect(ss.where.elements.length, 7);
+        expect(ss.orderBy.length, 1);
+        final orderByColumn = ss.orderBy.first as OrderByColumn;
+        expect(orderByColumn.columnName, 'name');
+        expect(orderByColumn.direction, SortDirection.descending);
+      },
     ),
   );
 
@@ -232,6 +239,8 @@ void main() {
           expect(ss.joins.first.type, JoinType.inner);
           expect(ss.joins.first.table, 'Customers');
           expect(ss.from, 'Orders');
+          expect(ss.joins.first.on.elements.length, 1);
+          expect(ss.joins.first.on.elements.first, isA<WhereCondition>());
         },
       ),
     );
