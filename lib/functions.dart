@@ -5,10 +5,19 @@ import 'package:selecta/model/order_by.dart';
 /// Type alias for a function that formats a value of type [T] to a [String].
 typedef Formatter<T> = String Function(T);
 
+/// The clause text for each part of the statement
+typedef AllClauses = ({
+  String selectClause,
+  String fromClause,
+  String joinClause,
+  String whereClause,
+  String orderByClause
+});
+
 /// A function that returns the input string as is.
 String identity(String s) => s;
 
-/// Converts a [SelectStatement] to a SQL string.
+/// Converts a [SelectStatement] to an SQL string.
 String statementToSql(
   SelectStatement statement, {
   Formatter<List<SelectedColumn>> selectFormatter = defaultSelectFormatter,
@@ -16,14 +25,32 @@ String statementToSql(
   Formatter<List<Join>> joinFormatter = defaultJoinFormatter,
   Formatter<WhereClauseGroup> whereFormatter = defaultWhereFormatter,
   Formatter<List<OrderByElement>> orderByFormatter = defaultOrderByFormatter,
-}) =>
-    'SELECT ${selectFormatter(statement.select)} '
-    'FROM ${fromFormatter(statement.from)}'
-    '${joinFormatter(statement.joins)}'
-    '${whereFormatter(statement.where).isNotEmpty ? ' '
-        'WHERE ${whereFormatter(statement.where)}' : ''}'
-    '${orderByFormatter(statement.orderBy).isNotEmpty ? ' '
-        'ORDER BY ${orderByFormatter(statement.orderBy)}' : ''}';
+  Formatter<AllClauses> joinTypeFormatter = defaultAllClausesFormatter,
+}) {
+  final selectClause = selectFormatter(statement.select);
+  final fromClause = fromFormatter(statement.from);
+  final joinClause = joinFormatter(statement.joins);
+  final whereClause = whereFormatter(statement.where);
+  final orderByClause = orderByFormatter(statement.orderBy);
+
+  return defaultAllClausesFormatter(
+    (
+      selectClause: selectClause,
+      fromClause: fromClause,
+      joinClause: joinClause,
+      whereClause: whereClause,
+      orderByClause: orderByClause
+    ),
+  );
+}
+
+/// Converts [AllClauses] to an SQL string.
+String defaultAllClausesFormatter(AllClauses clauses) =>
+    'SELECT ${clauses.selectClause} FROM '
+    '${clauses.fromClause}${clauses.joinClause}'
+    '${clauses.whereClause.isNotEmpty ? ' WHERE ${clauses.whereClause}' : ''}'
+    '${clauses.orderByClause.isNotEmpty ? ' ORDER BY '
+        '${clauses.orderByClause}' : ''}';
 
 /// Converts a list of [SelectedColumn]s to a SQL SELECT statement.
 String defaultSelectFormatter(List<SelectedColumn> columns) =>
