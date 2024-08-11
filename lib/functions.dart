@@ -56,7 +56,6 @@ String defaultAllClausesFormatter(AllClauses clauses) =>
     '${clauses.whereClause.isNotEmpty ? ' WHERE ${clauses.whereClause}' : ''}'
     '${clauses.orderByClause.isNotEmpty ? ' ORDER BY ${clauses.orderByClause}' : ''}';
 
-
 /// Converts [AllClauses] to an SQL string with default formatting options.
 String formattedAllClausesFormatter(AllClauses clauses) =>
     sqlFormatter(clauses, defaultOptions);
@@ -143,8 +142,6 @@ String defaultOperandFormatter(Operand operand) => switch (operand) {
       NumberLiteralOperand() => operand.value.toString(),
       ColumnReferenceOperand() => operand.value,
     };
-
-//----
 
 /// A function that applies formatting options to a string.
 String Function(String) applyFormatting(FormattingOptions options) =>

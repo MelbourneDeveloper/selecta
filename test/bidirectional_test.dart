@@ -33,17 +33,49 @@ void main() {
 
   test(
     'Simple SELECT *',
-    () => testBidirectionalConversion('SELECT * FROM Users'),
+    () => testBidirectionalConversion(
+      'SELECT * FROM Users',
+      validateStatement: (ss) {
+        expect(ss.select.length, 1);
+        expect(ss.select.first, isA<AllColumns>());
+        expect(ss.from, 'Users');
+        expect(ss.where.elements, isEmpty);
+        expect(ss.joins, isEmpty);
+        expect(ss.orderBy, isEmpty);
+      },
+    ),
   );
 
   test(
     'SELECT with specific columns',
-    () => testBidirectionalConversion('SELECT id, name, email FROM Customers'),
+    () => testBidirectionalConversion(
+      'SELECT id, name, email FROM Customers',
+      validateStatement: (ss) {
+        expect(ss.select.length, 3);
+        expect(ss.select, everyElement(isA<ColumnReference>()));
+        expect(
+          ss.select.map((c) => (c as ColumnReference).columnName),
+          ['id', 'name', 'email'],
+        );
+        expect(ss.from, 'Customers');
+      },
+    ),
   );
 
   test(
     'SELECT with table-qualified columns',
-    () => testBidirectionalConversion('SELECT Users.id, Users.name FROM Users'),
+    () => testBidirectionalConversion(
+      'SELECT Users.id, Users.name FROM Users',
+      validateStatement: (ss) {
+        expect(ss.select.length, 2);
+        expect(ss.select, everyElement(isA<ColumnReference>()));
+        expect(
+          ss.select.every((c) => (c as ColumnReference).tableName == 'Users'),
+          isTrue,
+        );
+        expect(ss.from, 'Users');
+      },
+    ),
   );
 
   test(
@@ -53,15 +85,30 @@ void main() {
       validateStatement: (ss) {
         expect(ss.where.elements.length, 3);
         expect(ss.where.elements.first, isA<WhereCondition>());
+        expect(ss.where.elements[1], equals(LogicalOperator.and));
+        expect(ss.where.elements.last, isA<WhereCondition>());
         expect(ss.from, 'Products');
       },
     ),
   );
 
+  //TODO: fix
   test(
     'SELECT with multiple conditions and grouping',
     () => testBidirectionalConversion(
       '''SELECT * FROM Employees WHERE (department="Sales" OR department="Marketing" ) AND salary>50000''',
+      validateStatement: (ss) {
+        expect(ss.where.elements[0], equals(GroupingOperator.open));
+        expect(
+          (ss.where.elements[1] as WhereCondition).leftOperand,
+          equals(const ColumnReferenceOperand('department')),
+        );
+        expect(ss.where.elements[2], equals(LogicalOperator.or));
+        expect(ss.where.elements[4], equals(GroupingOperator.close));
+        expect(ss.where.elements[5], equals(LogicalOperator.and));
+        expect(ss.from, 'Employees');
+        expect(ss.where.elements.length, 7);
+      },
     ),
   );
 
@@ -150,19 +197,16 @@ void main() {
     ),
   );
 
-  //TODO:
-  // test(
-  //   'Complex SELECT with JOIN and WHERE',
-  //   () => testBidirectionalConversion(
-  // ignore: lines_longer_than_80_chars
-  //       ''''SELECT Orders.id, Customers.name FROM Orders JOIN Customers ON Orders.customer_id = Customers.id WHERE Orders.status = "Shipped"''',
-  // ignore: lines_longer_than_80_chars
-  //       '''SELECT T Orders.id, Customers.name FROM Orders JOIN Customers ON Orders.customer_id = Customers.id WHERE Ordersstatus="Shipped"''',
-  //       (ss) {
-  //     expect(ss.select.length, 2);
-  //     expect(ss.from, 'Orders');
-  //   }),
-  // );
+  test(
+    'Complex SELECT with JOIN and WHERE',
+    () => testBidirectionalConversion(
+      '''SELECT Orders.id, Customers.name FROM Orders INNER JOIN Customers ON Orders.customer_id=Customers.id WHERE Orders.status="Shipped"''',
+      validateStatement: (ss) {
+        expect(ss.select.length, 2);
+        expect(ss.from, 'Orders');
+      },
+    ),
+  );
 
   test(
     'SELECT with ORDER BY and LIMIT',

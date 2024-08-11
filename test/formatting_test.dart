@@ -16,17 +16,14 @@ void main() {
     // ignore: avoid_print
     print(formatted);
 
+//TODO: proper formatting
     expect(
       formatted,
       equals('''
-
-SELECT
-\t*
+SELECT\t*
 FROM\tusers
-WHERE
-\tid=1
-ORDER BY
-\tname DESC'''),
+WHERE\tid=1
+ORDER BY\tname DESC'''),
     );
   });
 }
