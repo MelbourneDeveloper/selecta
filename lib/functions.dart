@@ -14,6 +14,16 @@ typedef AllClauses = ({
   String orderByClause
 });
 
+/// Formatting options for the SQL formatter.
+typedef FormattingOptions = ({
+  String newline,
+  String indent,
+  bool uppercaseKeywords
+});
+
+/// Default formatting options
+const defaultOptions = (newline: '\n', indent: '\t', uppercaseKeywords: true);
+
 /// A function that returns the input string as is.
 String identity(String s) => s;
 
@@ -44,6 +54,10 @@ String defaultAllClausesFormatter(AllClauses clauses) =>
     '${clauses.whereClause.isNotEmpty ? ' WHERE ${clauses.whereClause}' : ''}'
     '${clauses.orderByClause.isNotEmpty ? ' ORDER BY '
         '${clauses.orderByClause}' : ''}';
+
+/// Proper one
+String defaultAllClausesFormatter2(AllClauses clauses) =>
+    sqlFormatter(clauses, defaultOptions);
 
 /// Converts a list of [SelectedColumn]s to a SQL SELECT statement.
 String defaultSelectFormatter(List<SelectedColumn> columns) =>
@@ -131,3 +145,53 @@ String defaultOperandFormatter(Operand operand) => switch (operand) {
       NumberLiteralOperand() => operand.value.toString(),
       ColumnReferenceOperand() => operand.value,
     };
+
+//----
+
+/// A function that applies formatting options to a string.
+String Function(String) applyFormatting(FormattingOptions options) =>
+    (s) => options.uppercaseKeywords ? s.toUpperCase() : s;
+
+/// Formats the SELECT clause.
+String selectClauseFormatter(String clause, FormattingOptions options) =>
+    '${applyFormatting(options)('select')}${options.newline}${options.indent}'
+    '${clause.replaceAll(', ', ',${options.newline}${options.indent}')}';
+
+/// Formats the FROM clause.
+String fromClauseFormatter(String clause, FormattingOptions options) =>
+    '${applyFormatting(options)('from')}${options.newline}'
+    '${options.indent}$clause';
+
+/// Formats the JOIN clause.
+String joinClauseFormatter(String clause, FormattingOptions options) =>
+    clause.isEmpty
+        ? ''
+        : '${options.newline}${clause.trim().replaceAll(' ', options.newline)}';
+
+/// Formats the WHERE clause.
+String whereClauseFormatter(String clause, FormattingOptions options) => clause
+        .isEmpty
+    ? ''
+    : '${options.newline}${applyFormatting(options)('where')}${options.newline}'
+        '${options.indent}$clause';
+
+/// Formats the ORDER BY clause.
+String orderByClauseFormatter(
+  String clause,
+  FormattingOptions options,
+) =>
+    clause.isEmpty
+        ? ''
+        : '${options.newline}${applyFormatting(options)('order by')}'
+            '${options.newline}${options.indent}'
+            '${clause.replaceAll(', ', ','
+                '${options.newline}${options.indent}')}';
+
+/// Compose all formatters
+String sqlFormatter(AllClauses clauses, FormattingOptions options) => [
+      selectClauseFormatter(clauses.selectClause, options),
+      fromClauseFormatter(clauses.fromClause, options),
+      joinClauseFormatter(clauses.joinClause, options),
+      whereClauseFormatter(clauses.whereClause, options),
+      orderByClauseFormatter(clauses.orderByClause, options),
+    ].where((s) => s.isNotEmpty).join(options.newline);
