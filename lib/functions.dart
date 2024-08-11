@@ -16,17 +16,14 @@ String statementToSql(
   Formatter<List<Join>> joinFormatter = defaultJoinFormatter,
   Formatter<WhereClauseGroup> whereFormatter = defaultWhereFormatter,
   Formatter<List<OrderByElement>> orderByFormatter = defaultOrderByFormatter,
-}) {
-  final selectClause = selectFormatter(statement.select);
-  final fromClause = fromFormatter(statement.from);
-  final joinClause = joinFormatter(statement.joins);
-  final whereClause = whereFormatter(statement.where);
-  final orderByClause = orderByFormatter(statement.orderBy);
-
-  return 'SELECT $selectClause FROM $fromClause$joinClause'
-      '${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}'
-      '${orderByClause.isNotEmpty ? ' ORDER BY $orderByClause' : ''}';
-}
+}) =>
+    'SELECT ${selectFormatter(statement.select)} '
+    'FROM ${fromFormatter(statement.from)}'
+    '${joinFormatter(statement.joins)}'
+    '${whereFormatter(statement.where).isNotEmpty ? ' '
+        'WHERE ${whereFormatter(statement.where)}' : ''}'
+    '${orderByFormatter(statement.orderBy).isNotEmpty ? ' '
+        'ORDER BY ${orderByFormatter(statement.orderBy)}' : ''}';
 
 /// Converts a list of [SelectedColumn]s to a SQL SELECT statement.
 String defaultSelectFormatter(List<SelectedColumn> columns) =>
