@@ -26,23 +26,16 @@ String statementToSql(
   Formatter<WhereClauseGroup> whereFormatter = defaultWhereFormatter,
   Formatter<List<OrderByElement>> orderByFormatter = defaultOrderByFormatter,
   Formatter<AllClauses> joinTypeFormatter = defaultAllClausesFormatter,
-}) {
-  final selectClause = selectFormatter(statement.select);
-  final fromClause = fromFormatter(statement.from);
-  final joinClause = joinFormatter(statement.joins);
-  final whereClause = whereFormatter(statement.where);
-  final orderByClause = orderByFormatter(statement.orderBy);
-
-  return defaultAllClausesFormatter(
-    (
-      selectClause: selectClause,
-      fromClause: fromClause,
-      joinClause: joinClause,
-      whereClause: whereClause,
-      orderByClause: orderByClause
-    ),
-  );
-}
+}) =>
+    defaultAllClausesFormatter(
+      (
+        selectClause: selectFormatter(statement.select),
+        fromClause: fromFormatter(statement.from),
+        joinClause: joinFormatter(statement.joins),
+        whereClause: whereFormatter(statement.where),
+        orderByClause: orderByFormatter(statement.orderBy)
+      ),
+    );
 
 /// Converts [AllClauses] to an SQL string.
 String defaultAllClausesFormatter(AllClauses clauses) =>
