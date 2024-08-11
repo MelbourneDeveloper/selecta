@@ -1,3 +1,5 @@
+// ignore_for_file: lines_longer_than_80_chars
+
 import 'package:selecta/model/join.dart';
 import 'package:selecta/model/model.dart';
 import 'package:selecta/model/order_by.dart';
@@ -52,11 +54,11 @@ String defaultAllClausesFormatter(AllClauses clauses) =>
     'SELECT ${clauses.selectClause} FROM '
     '${clauses.fromClause}${clauses.joinClause}'
     '${clauses.whereClause.isNotEmpty ? ' WHERE ${clauses.whereClause}' : ''}'
-    '${clauses.orderByClause.isNotEmpty ? ' ORDER BY '
-        '${clauses.orderByClause}' : ''}';
+    '${clauses.orderByClause.isNotEmpty ? ' ORDER BY ${clauses.orderByClause}' : ''}';
 
-/// Proper one
-String defaultAllClausesFormatter2(AllClauses clauses) =>
+
+/// Converts [AllClauses] to an SQL string with default formatting options.
+String formattedAllClausesFormatter(AllClauses clauses) =>
     sqlFormatter(clauses, defaultOptions);
 
 /// Converts a list of [SelectedColumn]s to a SQL SELECT statement.
@@ -114,12 +116,8 @@ String joinToSql(
   Formatter<JoinType> typeFormatter = defaultJoinTypeFormatter,
   Formatter<String> tableFormatter = identity,
   Formatter<WhereClauseGroup> onFormatter = defaultWhereFormatter,
-}) {
-  final joinTypeStr = typeFormatter(join.type);
-  final tableStr = tableFormatter(join.table);
-  final onStr = onFormatter(join.on);
-  return ' $joinTypeStr $tableStr ON $onStr';
-}
+}) =>
+    ' ${typeFormatter(join.type)} ${tableFormatter(join.table)} ON ${onFormatter(join.on)}';
 
 /// The default formatter for a [JoinType].
 String defaultJoinTypeFormatter(JoinType type) => switch (type) {
@@ -153,45 +151,26 @@ String Function(String) applyFormatting(FormattingOptions options) =>
     (s) => options.uppercaseKeywords ? s.toUpperCase() : s;
 
 /// Formats the SELECT clause.
-String selectClauseFormatter(String clause, FormattingOptions options) =>
-    '${applyFormatting(options)('select')}${options.newline}${options.indent}'
-    '${clause.replaceAll(', ', ',${options.newline}${options.indent}')}';
-
-/// Formats the FROM clause.
-String fromClauseFormatter(String clause, FormattingOptions options) =>
-    '${applyFormatting(options)('from')}${options.newline}'
-    '${options.indent}$clause';
-
-/// Formats the JOIN clause.
-String joinClauseFormatter(String clause, FormattingOptions options) =>
-    clause.isEmpty
-        ? ''
-        : '${options.newline}${clause.trim().replaceAll(' ', options.newline)}';
-
-/// Formats the WHERE clause.
-String whereClauseFormatter(String clause, FormattingOptions options) => clause
-        .isEmpty
-    ? ''
-    : '${options.newline}${applyFormatting(options)('where')}${options.newline}'
-        '${options.indent}$clause';
-
-/// Formats the ORDER BY clause.
-String orderByClauseFormatter(
+String formatClause(
+  String keyword,
   String clause,
-  FormattingOptions options,
-) =>
+  FormattingOptions options, {
+  bool addNewline = true,
+}) =>
     clause.isEmpty
         ? ''
-        : '${options.newline}${applyFormatting(options)('order by')}'
-            '${options.newline}${options.indent}'
-            '${clause.replaceAll(', ', ','
-                '${options.newline}${options.indent}')}';
+        : '${options.newline}${applyFormatting(options)(keyword)}'
+            '${addNewline ? options.newline : ''}'
+            '${options.indent}${clause.replaceAll(', ', ',${options.newline}${options.indent}')}';
 
 /// Compose all formatters
 String sqlFormatter(AllClauses clauses, FormattingOptions options) => [
-      selectClauseFormatter(clauses.selectClause, options),
-      fromClauseFormatter(clauses.fromClause, options),
-      joinClauseFormatter(clauses.joinClause, options),
-      whereClauseFormatter(clauses.whereClause, options),
-      orderByClauseFormatter(clauses.orderByClause, options),
-    ].where((s) => s.isNotEmpty).join(options.newline);
+      formatClause('select', clauses.selectClause, options),
+      formatClause('from', clauses.fromClause, options, addNewline: false),
+      if (clauses.joinClause.isEmpty)
+        ''
+      else
+        '${options.newline}${clauses.joinClause.trim().replaceAll(' ', options.newline)}',
+      formatClause('where', clauses.whereClause, options),
+      formatClause('order by', clauses.orderByClause, options),
+    ].where((s) => s.isNotEmpty).join();

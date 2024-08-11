@@ -10,24 +10,23 @@ void main() {
 
     final formatted = statementToSql(
       select,
-      allClausesFormatter: defaultAllClausesFormatter2,
-    );
-
-    expect(
-      formatted,
-      equals('SELECT\n'
-          '\t*\n'
-          'FROM\n'
-          '\tusers\n'
-          '\n'
-          'WHERE\n'
-          '\tid=1\n'
-          '\n'
-          'ORDER BY\n'
-          '\tname DESC'),
+      allClausesFormatter: formattedAllClausesFormatter,
     );
 
     // ignore: avoid_print
     print(formatted);
+
+    expect(
+      formatted,
+      equals('''
+
+SELECT
+\t*
+FROM\tusers
+WHERE
+\tid=1
+ORDER BY
+\tname DESC'''),
+    );
   });
 }
