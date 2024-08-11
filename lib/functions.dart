@@ -2,72 +2,104 @@ import 'package:selecta/model/join.dart';
 import 'package:selecta/model/model.dart';
 import 'package:selecta/model/order_by.dart';
 
-/// Converts a [SelectStatement] to a SQL SELECT statement.
-String statementToSql(SelectStatement statement) {
-  final selectClause = statement.select
-      .map(
-        (col) => switch (col) {
-          AllColumns() => col.tableName != null ? '${col.tableName}.*' : '*',
-          ColumnReference() => col.tableName != null
-              ? '${col.tableName}.${col.columnName}'
-              : col.columnName,
-        },
-      )
-      .join(', ');
+/// Type alias for a function that formats a value of type [T] to a [String].
+typedef Formatter<T> = String Function(T);
 
-  final joinClause = joinToSQL(statement.joins);
-  final whereClause = whereClauseGroupToSQL(statement.where);
-  final orderByClause = orderByToSQL(statement.orderBy);
+/// A function that returns the input string as is.
+String identity(String s) => s;
 
-  return 'SELECT $selectClause FROM ${statement.from}'
-      '$joinClause'
+/// Converts a [SelectStatement] to a SQL string.
+String statementToSql(
+  SelectStatement statement, {
+  Formatter<List<SelectedColumn>> selectFormatter = defaultSelectFormatter,
+  Formatter<String> fromFormatter = identity,
+  Formatter<List<Join>> joinFormatter = defaultJoinFormatter,
+  Formatter<WhereClauseGroup> whereFormatter = defaultWhereFormatter,
+  Formatter<List<OrderByElement>> orderByFormatter = defaultOrderByFormatter,
+}) {
+  final selectClause = selectFormatter(statement.select);
+  final fromClause = fromFormatter(statement.from);
+  final joinClause = joinFormatter(statement.joins);
+  final whereClause = whereFormatter(statement.where);
+  final orderByClause = orderByFormatter(statement.orderBy);
+
+  return 'SELECT $selectClause FROM $fromClause$joinClause'
       '${whereClause.isNotEmpty ? ' WHERE $whereClause' : ''}'
       '${orderByClause.isNotEmpty ? ' ORDER BY $orderByClause' : ''}';
 }
 
-/// Converts a list of [OrderByElement] to a SQL ORDER BY clause.
-String orderByToSQL(List<OrderByElement> orderBy) => orderBy
-    .map(
-      (element) => switch (element) {
-        OrderByColumn() =>
-          '${element.tableName != null ? '${element.tableName}.' : ''}'
-              '${element.columnName} ${element.toSql()}',
-      },
-    )
-    .join(', ');
+/// Converts a list of [SelectedColumn]s to a SQL SELECT statement.
+String defaultSelectFormatter(List<SelectedColumn> columns) =>
+    columns.map(columnToSql).join(', ');
 
-/// Converts a [WhereClauseGroup] to a SQL WHERE clause.
-String whereClauseGroupToSQL(WhereClauseGroup group) => group.elements
-    .map(
-      (element) => switch (element) {
-        WhereCondition() => conditionToSQL(element),
-        LogicalOperator() => element.name.toUpperCase(),
-        WhereClauseGroup() => '(${whereClauseGroupToSQL(element)})',
-        GroupingOperator.open => '(',
-        GroupingOperator.close => ')',
-      },
-    )
-    .join(' ');
+/// Converts a [SelectedColumn] to a SQL string.
+String columnToSql(SelectedColumn col) => switch (col) {
+      AllColumns() => col.tableName != null ? '${col.tableName}.*' : '*',
+      ColumnReference() => col.tableName != null
+          ? '${col.tableName}.${col.columnName}'
+          : col.columnName,
+    };
 
-/// Converts a [WhereClauseGroup] to a SQL WHERE clause string.
-String conditionToSQL(WhereCondition condition) =>
-    '${_operandToSQL(condition.leftOperand)}'
-    '${getClauseOperatorSymbol(condition.clauseOperator)}'
-    '${_operandToSQL(condition.rightOperand)}';
+/// The default formatter for the ORDER BY clause.
+String defaultOrderByFormatter(List<OrderByElement> orderBy) =>
+    orderBy.map(orderByElementToSql).join(', ');
 
-/// Converts a list of [Join] to a SQL JOIN clause.
-String joinToSQL(List<Join> joins) => joins.map((join) {
-      final joinTypeStr = switch (join.type) {
-        JoinType.inner => 'INNER JOIN',
-        JoinType.left => 'LEFT JOIN',
-        JoinType.right => 'RIGHT JOIN',
-        JoinType.full => 'FULL JOIN',
-      };
-      return ' $joinTypeStr ${join.table} ON ${whereClauseGroupToSQL(join.on)}';
-    }).join();
+/// Converts an [OrderByElement] to a SQL string.
+String orderByElementToSql(OrderByElement element) => switch (element) {
+      OrderByColumn() =>
+        '${element.tableName != null ? '${element.tableName}.' : ''}'
+            '${element.columnName} ${element.toSql()}',
+    };
 
-/// Converts an [Operand] to a SQL operand.
-String getClauseOperatorSymbol(ClauseOperator op) => switch (op) {
+/// The default formatter for the WHERE clause.
+String defaultWhereFormatter(WhereClauseGroup group) =>
+    group.elements.map(whereClauseElementToSql).join(' ');
+
+/// Converts a [WhereClauseElement] to a SQL string.
+String whereClauseElementToSql(WhereClauseElement element) => switch (element) {
+      WhereCondition() => conditionToSQL(element),
+      LogicalOperator() => element.name.toUpperCase(),
+      WhereClauseGroup() => '(${defaultWhereFormatter(element)})',
+      GroupingOperator.open => '(',
+      GroupingOperator.close => ')',
+    };
+
+/// Converts a [WhereCondition] to a SQL string.
+String conditionToSQL(
+  WhereCondition condition, {
+  Formatter<Operand> operandFormatter = defaultOperandFormatter,
+  Formatter<ClauseOperator> operatorFormatter = defaultOperatorFormatter,
+}) =>
+    '${operandFormatter(condition.leftOperand)}'
+    '${operatorFormatter(condition.clauseOperator)}'
+    '${operandFormatter(condition.rightOperand)}';
+
+/// The default formatter for a list of [Join]s.
+String defaultJoinFormatter(List<Join> joins) => joins.map(joinToSql).join();
+
+/// Converts a [Join] to a SQL string.
+String joinToSql(
+  Join join, {
+  Formatter<JoinType> typeFormatter = defaultJoinTypeFormatter,
+  Formatter<String> tableFormatter = identity,
+  Formatter<WhereClauseGroup> onFormatter = defaultWhereFormatter,
+}) {
+  final joinTypeStr = typeFormatter(join.type);
+  final tableStr = tableFormatter(join.table);
+  final onStr = onFormatter(join.on);
+  return ' $joinTypeStr $tableStr ON $onStr';
+}
+
+/// The default formatter for a [JoinType].
+String defaultJoinTypeFormatter(JoinType type) => switch (type) {
+      JoinType.inner => 'INNER JOIN',
+      JoinType.left => 'LEFT JOIN',
+      JoinType.right => 'RIGHT JOIN',
+      JoinType.full => 'FULL JOIN',
+    };
+
+/// The default formatter for a [ClauseOperator].
+String defaultOperatorFormatter(ClauseOperator op) => switch (op) {
       ClauseOperator.equals => '=',
       ClauseOperator.notEquals => '!=',
       ClauseOperator.greaterThan => '>',
@@ -76,26 +108,9 @@ String getClauseOperatorSymbol(ClauseOperator op) => switch (op) {
       ClauseOperator.lessThanEqualTo => '<=',
     };
 
-/// Converts a list of selected columns to a SQL SELECT clause
-String selectColumnsToSql(List<SelectedColumn> selectedColumns) =>
-    'SELECT ${selectedColumns.map(
-          (column) => switch (column) {
-            // ignore: unused_local_variable
-            (final AllColumns allColumns) =>
-              '${allColumns.tableName != null ? '${allColumns.tableName}'
-                  '.' : ''}*',
-            (final ColumnReference columnReference) =>
-              _columnReferenceToString(columnReference),
-          },
-        ).join(', ')}';
-
-String _columnReferenceToString(ColumnReference columnReference) =>
-    '${columnReference.tableName != null ? '${columnReference.tableName}'
-        '.' : ''}${columnReference.columnName}';
-
-/// Converts a [Operand] to a string.
-String _operandToSQL(Operand operand) => switch (operand) {
-      final StringLiteralOperand operand => '"${operand.value}"',
-      final NumberLiteralOperand operand => operand.value.toString(),
-      final ColumnReferenceOperand operand => operand.value,
+/// The default formatter for an [Operand].
+String defaultOperandFormatter(Operand operand) => switch (operand) {
+      StringLiteralOperand() => '"${operand.value}"',
+      NumberLiteralOperand() => operand.value.toString(),
+      ColumnReferenceOperand() => operand.value,
     };

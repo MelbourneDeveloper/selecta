@@ -1,4 +1,4 @@
-import 'package:selecta/functions.dart';
+// import 'package:selecta/functions.dart';
 import 'package:selecta/model/operand.dart';
 import 'package:selecta/model/select_statement.dart';
 
@@ -21,7 +21,7 @@ final class WhereCondition implements WhereClauseElement {
 
   @override
   String toString() =>
-      '$leftOperand ${getClauseOperatorSymbol(clauseOperator)} $rightOperand';
+      '$leftOperand $clauseOperator $rightOperand';
 
   @override
   bool operator ==(Object other) =>

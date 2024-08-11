@@ -35,7 +35,7 @@ void main() {
       ],
     );
 
-    final sql = whereClauseGroupToSQL(whereClause);
+    final sql = defaultWhereFormatter(whereClause);
 
     expect(sql, 'NAME="JIM" AND ( ID=123 OR ID=321 )');
   });
@@ -59,7 +59,7 @@ void main() {
       )
       ..closeBracket();
 
-    final sql = whereClauseGroupToSQL(builder.build());
+    final sql = defaultWhereFormatter(builder.build());
 
     expect(sql, 'NAME="JIM" AND ( ID=123 OR ID=321 )');
   });
@@ -73,7 +73,7 @@ void main() {
           NumberLiteralOperand(18),
         ),
       ]);
-      expect(whereClauseGroupToSQL(group), 'age>18');
+      expect(defaultWhereFormatter(group), 'age>18');
     });
 
     test('handles multiple conditions with logical operators', () {
@@ -90,7 +90,7 @@ void main() {
           StringLiteralOperand('John'),
         ),
       ]);
-      expect(whereClauseGroupToSQL(group), 'age>18 AND name="John"');
+      expect(defaultWhereFormatter(group), 'age>18 AND name="John"');
     });
 
     test('handles nested groups', () {
@@ -116,7 +116,7 @@ void main() {
         ),
       ]);
       expect(
-        whereClauseGroupToSQL(group),
+        defaultWhereFormatter(group),
         '(age>18 OR status="adult") AND country="USA"',
       );
     });
