@@ -1,0 +1,31 @@
+name: example
+description: "A new Flutter project."
+
+publish_to: 'none' 
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.4 <4.0.0'
+
+dependencies:
+  code_text_field: ^1.1.0
+  cupertino_icons: ^1.0.6
+  flutter:
+    sdk: flutter
+  flutter_highlight: ^0.7.0
+
+dev_dependencies:
+  austerity: ^1.2.0
+  flutter_lints: ^3.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+    - family: Inconsolata
+      fonts:
+        - asset: assets/fonts/Inconsolata-Regular.ttf
+        - asset: assets/fonts/Inconsolata-Bold.ttf
