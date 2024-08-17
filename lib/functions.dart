@@ -20,11 +20,17 @@ typedef AllClauses = ({
 typedef FormattingOptions = ({
   String newline,
   String indent,
-  bool uppercaseKeywords
+  bool uppercaseKeywords,
+  int subClauseIndent
 });
 
 /// Default formatting options
-const defaultOptions = (newline: '\n', indent: '\t', uppercaseKeywords: true);
+const defaultOptions = (
+  newline: '\n',
+  indent: ' ',
+  uppercaseKeywords: true,
+  subClauseIndent: 6
+);
 
 /// A function that returns the input string as is.
 String identity(String s) => s;
@@ -151,17 +157,45 @@ String Function(String) applyFormatting(FormattingOptions options) =>
 String formatClause(
   String keyword,
   String clause,
-  FormattingOptions options,
-) =>
-    clause.isEmpty ? '' : '${applyFormatting(options)(keyword)}\t$clause';
+  FormattingOptions options, {
+  bool isSubclause = false,
+}) {
+  final keywordStr =
+      options.uppercaseKeywords ? keyword.toUpperCase() : keyword;
+  final formattedClause = clause.contains(',')
+      ? clause.split(',').map((s) => s.trim()).join(
+            ',${options.newline}${options.indent * options.subClauseIndent}',
+          )
+      : clause.trim();
+
+  return '$keywordStr $formattedClause';
+}
 
 /// Compose all formatters
 String sqlFormatter(AllClauses clauses, FormattingOptions options) => [
-      formatClause('select', clauses.selectClause, options),
-      formatClause('from', clauses.fromClause, options),
-      if (clauses.joinClause.isNotEmpty) clauses.joinClause.trim(),
-      if (clauses.whereClause.isNotEmpty)
-        formatClause('where', clauses.whereClause, options),
-      if (clauses.orderByClause.isNotEmpty)
-        formatClause('order by', clauses.orderByClause, options),
+      formatClause('SELECT', clauses.selectClause, options),
+      formatClause('FROM', clauses.fromClause, options),
+      if (clauses.joinClause.isNotEmpty)
+        formatClause(
+          'INNER JOIN',
+          clauses.joinClause
+              .trim()
+              .split(' ON ')[0]
+              .replaceAll('INNER JOIN ', ''),
+          options,
+        ),
+      if (clauses.joinClause.isNotEmpty)
+        formatClause(
+          'ON',
+          clauses.joinClause.trim().split(' ON ')[1],
+          options,
+          isSubclause: true,
+        ),
+      formatClause('WHERE', clauses.whereClause, options, isSubclause: true),
+      formatClause(
+        'ORDER BY',
+        clauses.orderByClause,
+        options,
+        isSubclause: true,
+      ),
     ].where((s) => s.isNotEmpty).join(options.newline);
