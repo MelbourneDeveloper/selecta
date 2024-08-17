@@ -1,0 +1,35 @@
+name: Flutter Web Build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.22.3'
+        channel: 'stable'
+    
+    - name: Get dependencies
+      run: |
+        cd example
+        flutter pub get
+    
+    - name: Build Web
+      run: |
+        cd example
+        flutter build web --release
+    
+    - name: Archive Production Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: web-build
+        path: example/build/web
