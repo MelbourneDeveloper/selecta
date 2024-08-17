@@ -19,21 +19,50 @@ class SQLEditor extends StatefulWidget {
 }
 
 class _SQLEditorState extends State<SQLEditor> {
-  late final CodeController codeController;
+  late final CodeController _codeController;
+  bool _isUpdating = false;
 
   @override
   void initState() {
     super.initState();
-    codeController = CodeController(
+    _codeController = CodeController(
       text: widget.sqlNotifier.sql,
       language: sql,
     );
 
-    widget.sqlNotifier.addListener(() {
-      codeController.text = widget.isFormatted
+    widget.sqlNotifier.addListener(_updateControllerText);
+  }
+
+  void _updateControllerText() {
+    if (!_isUpdating) {
+      _isUpdating = true;
+      final newText = widget.isFormatted
           ? widget.sqlNotifier.formattedSql
           : widget.sqlNotifier.sql;
-    });
+
+      if (_codeController.text != newText) {
+        _codeController.value = _codeController.value.copyWith(
+          text: newText,
+          selection: TextSelection.collapsed(offset: newText.length),
+        );
+      }
+      _isUpdating = false;
+    }
+  }
+
+  void _handleTextChanged(String newText) {
+    if (!_isUpdating) {
+      _isUpdating = true;
+      widget.sqlNotifier.sql = newText;
+      _isUpdating = false;
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.sqlNotifier.removeListener(_updateControllerText);
+    _codeController.dispose();
+    super.dispose();
   }
 
   @override
@@ -45,13 +74,10 @@ class _SQLEditorState extends State<SQLEditor> {
             padding: const EdgeInsets.all(8),
             child: CodeTheme(
               data: const CodeThemeData(styles: monokaiSublimeTheme),
-              child: ListenableBuilder(
-                listenable: widget.sqlNotifier,
-                builder: (context, child) => CodeField(
-                  onChanged: (t) => widget.sqlNotifier.sql = t,
-                  controller: codeController,
-                  textStyle: const TextStyle(fontFamily: 'Inconsolata'),
-                ),
+              child: CodeField(
+                controller: _codeController,
+                onChanged: _handleTextChanged,
+                textStyle: const TextStyle(fontFamily: 'Inconsolata'),
               ),
             ),
           ),
