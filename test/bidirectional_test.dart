@@ -234,7 +234,8 @@ void main() {
         expect(ss.where.elements.length, 1);
         final whereCondition = ss.where.elements.first as WhereCondition;
         expect(whereCondition.clauseOperator, ClauseOperator.like);
-        final rightOperand = whereCondition.rightOperand as StringLiteralOperand;
+        final rightOperand =
+            whereCondition.rightOperand as StringLiteralOperand;
         expect(rightOperand.value, '%apple%');
       },
     ),

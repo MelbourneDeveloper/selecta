@@ -182,19 +182,21 @@ Map<String, String> _extractClauses(String sql) {
 }
 
 /// Tokenizes a where clause string into individual tokens.
-List<String> _tokenizeWhereClause(String whereClause) =>
-    // Split the where clause into tokens, preserving quoted strings and
-    // parentheses
-    whereClause
-        .splitMapJoin(
-          RegExp(r'''(\s+)|("[^"]*")|('[^']*')|([!<>=]+)|(\(|\))'''),
-          onMatch: (m) =>
-              '${m.group(2) ?? ''}${m.group(3) ?? ''}${m.group(4) ?? ''}'
-              '${m.group(5) ?? ''} ',
-          onNonMatch: (s) => '$s ',
-        )
-        .trim()
-        .split(RegExp(r'\s+'));
+List<String> _tokenizeWhereClause(String whereClause) => whereClause
+    .splitMapJoin(
+      RegExp(
+        r'''(\s+)|("[^"]*")|('[^']*')|(!=|>=|<=|[!<>=]+)|(LIKE(?=\s))|(\(|\))''',
+        caseSensitive: false,
+      ),
+      onMatch: (m) =>
+          '${m.group(2) ?? ''}${m.group(3) ?? ''}${m.group(4) ?? ''}'
+          '${m.group(5) ?? ''}${m.group(6) ?? ''} ',
+      onNonMatch: (s) => '$s ',
+    )
+    .trim()
+    .split(RegExp(r'\s+'))
+    .where((token) => token.isNotEmpty)
+    .toList();
 
 /// Parses a list of tokens into a [WhereCondition].
 WhereCondition _parseCondition(List<String> conditionTokens) =>
@@ -235,7 +237,8 @@ ClauseOperator _parseOperator(String op) => switch (op.toUpperCase()) {
 
 /// Parses a string value into an [Operand].
 Operand _parseOperand(String operand) =>
-    operand.startsWith("'") && operand.endsWith("'")
+    (operand.startsWith("'") && operand.endsWith("'")) ||
+            (operand.startsWith('"') && operand.endsWith('"'))
         ? StringLiteralOperand(operand.substring(1, operand.length - 1))
         : num.tryParse(operand) != null
             ? NumberLiteralOperand(num.parse(operand))
