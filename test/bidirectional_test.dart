@@ -232,8 +232,10 @@ void main() {
       validateStatement: (ss) {
         expect(ss.from, 'Products');
         expect(ss.where.elements.length, 1);
-        final first2 = ss.where.elements.first as WhereCondition;
-        expect(first2.clauseOperator, ClauseOperator.like);
+        final whereCondition = ss.where.elements.first as WhereCondition;
+        expect(whereCondition.clauseOperator, ClauseOperator.like);
+        final rightOperand = whereCondition.rightOperand as StringLiteralOperand;
+        expect(rightOperand.value, '%apple%');
       },
     ),
   );
