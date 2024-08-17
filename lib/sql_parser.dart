@@ -72,7 +72,7 @@ List<SelectedColumn> parseSelectedColumns(String selectClause) {
 /// Converts a [SelectStatement] to a SQL SELECT statement.
 WhereClauseGroup parseWhereClause(String whereClause) {
   if (whereClause.isEmpty) {
-    return WhereClauseGroup([]);
+    return const WhereClauseGroup([]);
   }
 
   final elements = <WhereClauseElement>[];

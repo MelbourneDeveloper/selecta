@@ -20,7 +20,7 @@ class MainLayout extends StatefulWidget {
 }
 
 class _MainLayoutState extends State<MainLayout> {
-  double _verticalDividerPosition = 0.5;
+  double _verticalDividerPosition = 0.3;
   double _horizontalDividerPosition = 0.5;
 
   @override

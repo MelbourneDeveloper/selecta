@@ -10,7 +10,6 @@ class SelectStatementTreeView extends StatelessWidget {
 
   /// The select statement to display.
   final SelectStatement selectStatement;
-
   @override
   Widget build(BuildContext context) => TreeView<String>(
         nodes: _buildNodes(),
@@ -19,7 +18,7 @@ class SelectStatementTreeView extends StatelessWidget {
           duration: const Duration(milliseconds: 300),
           decoration: BoxDecoration(
             color:
-                isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+                isSelected ? Colors.blue.withOpacity(0.05) : Colors.transparent,
             border: Border(
               left: BorderSide(
                 color:
@@ -28,19 +27,30 @@ class SelectStatementTreeView extends StatelessWidget {
               ),
             ),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-            dense: true,
-            leading: _getIcon(node.data),
-            title: Text(
-              node.data,
-              style: TextStyle(
-                color: _getColor(node.data),
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          child: InkWell(
+            onTap: () => select(node),
+            child: Container(
+              constraints:
+                  const BoxConstraints(minHeight: 24), // Tight constraint
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              child: Row(
+                children: [
+                  _getIcon(node.data),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      node.data,
+                      style: TextStyle(
+                        color: _getColor(node.data),
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            selected: isSelected,
-            onTap: () => select(node),
           ),
         ),
         expanderBuilder: (context, isExpanded, animationValue) =>
@@ -51,9 +61,29 @@ class SelectStatementTreeView extends StatelessWidget {
             angle: value * 3.14159,
             child: Icon(
               Icons.chevron_right,
-              color: Color.lerp(Colors.grey, Colors.blue, value),
-              size: 18,
+              color:
+                  Color.lerp(Colors.grey.withOpacity(0.5), Colors.blue, value),
+              size: 16,
             ),
+          ),
+        ),
+      );
+
+  Widget _getIcon(String nodeData) => SizedBox(
+        width: 16,
+        height: 16,
+        child: Center(
+          child: Icon(
+            switch (nodeData.split(' ').first) {
+              'SELECT' => Icons.list_alt,
+              'FROM' => Icons.table_chart,
+              'JOINS' => Icons.link,
+              'WHERE' => Icons.filter_alt,
+              'ORDER' => Icons.sort,
+              _ => Icons.code,
+            },
+            color: _getColor(nodeData),
+            size: 14,
           ),
         ),
       );
@@ -64,21 +94,21 @@ class SelectStatementTreeView extends StatelessWidget {
         'JOINS' => Colors.purple,
         'WHERE' => Colors.red,
         'ORDER' => Colors.blue,
-        _ => Colors.black,
+        _ => Colors.black54,
       };
 
-  Widget _getIcon(String nodeData) => Icon(
-        switch (nodeData.split(' ').first) {
-          'SELECT' => Icons.list_alt,
-          'FROM' => Icons.table_chart,
-          'JOINS' => Icons.link,
-          'WHERE' => Icons.filter_alt,
-          'ORDER' => Icons.sort,
-          _ => Icons.code,
-        },
-        color: _getColor(nodeData),
-        size: 18,
-      );
+  // Widget _getIcon(String nodeData) => Icon(
+  //       switch (nodeData.split(' ').first) {
+  //         'SELECT' => Icons.list_alt,
+  //         'FROM' => Icons.table_chart,
+  //         'JOINS' => Icons.link,
+  //         'WHERE' => Icons.filter_alt,
+  //         'ORDER' => Icons.sort,
+  //         _ => Icons.code,
+  //       },
+  //       color: _getColor(nodeData),
+  //       size: 16,
+  //     );
 
   List<TreeNode<String>> _buildNodes() => [
         TreeNode<String>(

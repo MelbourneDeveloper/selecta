@@ -16,7 +16,7 @@ class AppRoot extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'SQL Editor Layout',
+        title: 'selecta In Action',
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),

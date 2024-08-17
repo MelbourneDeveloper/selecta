@@ -6,7 +6,6 @@ import 'package:highlight/languages/sql.dart';
 
 /// An SQL editor.
 class SQLTextEditor extends StatefulWidget {
-
   /// Creates a new SQL text editor.
   const SQLTextEditor({
     required this.sqlNotifier,
@@ -32,11 +31,13 @@ class _SQLTextEditorState extends State<SQLTextEditor> {
   void initState() {
     super.initState();
     _codeController = CodeController(
-      text: widget.sqlNotifier.sql,
+      text: '',
       language: sql,
     );
 
     widget.sqlNotifier.addListener(_updateControllerText);
+
+    _updateControllerText();
   }
 
   void _updateControllerText() {
