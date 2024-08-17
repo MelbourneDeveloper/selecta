@@ -9,21 +9,65 @@ class SelectStatementTreeView extends StatelessWidget {
   final SelectStatement selectStatement;
 
   @override
-    @override
   Widget build(BuildContext context) => TreeView<String>(
         nodes: _buildNodes(),
         builder: (context, node, isSelected, expansionAnimation, select) =>
-            ListTile(
-          title: Text(node.data),
-          selected: isSelected,
-          onTap: () => select(node),
+            AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          color: isSelected ? Colors.blue.withOpacity(0.2) : Colors.transparent,
+          child: ListTile(
+            leading: _getIcon(node.data),
+            title: Text(
+              node.data,
+              style: TextStyle(
+                color: isSelected ? Colors.blue : Colors.black,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+            selected: isSelected,
+            onTap: () => select(node),
+          ),
         ),
         expanderBuilder: (context, isExpanded, animationValue) =>
-            RotationTransition(
-          turns: animationValue,
-          child: const Icon(Icons.chevron_right),
+            TweenAnimationBuilder<double>(
+          tween: Tween<double>(begin: 0, end: isExpanded ? 0.5 : 0),
+          duration: const Duration(milliseconds: 300),
+          builder: (context, value, child) => Transform.rotate(
+            angle: value * 3.14159,
+            child: Icon(
+              Icons.chevron_right,
+              color: Color.lerp(Colors.grey, Colors.blue, value),
+            ),
+          ),
         ),
       );
+
+  Widget _getIcon(String nodeData) {
+    IconData iconData;
+    Color color;
+
+    if (nodeData.startsWith('SELECT')) {
+      iconData = Icons.list_alt;
+      color = Colors.green;
+    } else if (nodeData.startsWith('FROM')) {
+      iconData = Icons.table_chart;
+      color = Colors.orange;
+    } else if (nodeData.startsWith('JOINS')) {
+      iconData = Icons.link;
+      color = Colors.purple;
+    } else if (nodeData.startsWith('WHERE')) {
+      iconData = Icons.filter_alt;
+      color = Colors.red;
+    } else if (nodeData.startsWith('ORDER BY')) {
+      iconData = Icons.sort;
+      color = Colors.blue;
+    } else {
+      iconData = Icons.code;
+      color = Colors.grey;
+    }
+
+    return Icon(iconData, color: color);
+  }
 
   List<TreeNode<String>> _buildNodes() => [
         TreeNode<String>(
