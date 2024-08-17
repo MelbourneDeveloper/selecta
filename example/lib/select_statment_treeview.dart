@@ -5,7 +5,6 @@ import 'package:selecta/model/order_by.dart';
 
 /// A tree view of a select statement.
 class SelectStatementTreeView extends StatelessWidget {
-
   /// Creates a new select statement tree view.
   const SelectStatementTreeView({required this.selectStatement, super.key});
 
@@ -65,7 +64,7 @@ class SelectStatementTreeView extends StatelessWidget {
         'JOINS' => Colors.purple,
         'WHERE' => Colors.red,
         'ORDER' => Colors.blue,
-        _ => Colors.grey,
+        _ => Colors.black,
       };
 
   Widget _getIcon(String nodeData) => Icon(

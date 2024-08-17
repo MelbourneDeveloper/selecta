@@ -82,8 +82,11 @@ class _MainLayoutState extends State<MainLayout> {
 
   Container _treeViewPanel() => Container(
         color: Colors.grey[200],
-        child: SelectStatementTreeView(
-          selectStatement: sqlNotifier.selectStatement,
+        child: ListenableBuilder(
+          listenable: sqlNotifier,
+          builder: (context, child) => SelectStatementTreeView(
+            selectStatement: sqlNotifier.selectStatement,
+          ),
         ),
       );
 
