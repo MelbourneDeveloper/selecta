@@ -1,5 +1,5 @@
-import 'package:example/main.dart';
 import 'package:example/sql_editor_layout.dart';
+import 'package:example/sql_notifier.dart';
 import 'package:flutter/material.dart';
 
 class MyApp extends StatelessWidget {
@@ -12,6 +12,8 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),
-        home: const SQLEditorLayout(),
+        home: SQLEditorLayout(
+          sqlNotifier: SqlNotifier(),
+        ),
       );
 }

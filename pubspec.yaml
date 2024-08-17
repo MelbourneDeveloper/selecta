@@ -2,6 +2,7 @@ name: selecta
 description: A model that represents SQL Select queries, and tools to convert from SQL/JSON to the model and back
 version: 0.0.3-beta
 repository: https://github.com/MelbourneDeveloper/selecta
+publish_to: 'none'
 
 environment:
   sdk: ^3.2.3

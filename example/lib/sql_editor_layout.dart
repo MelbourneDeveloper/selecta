@@ -1,14 +1,18 @@
-import 'package:example/main.dart';
 import 'package:example/sql_editor.dart';
+import 'package:example/sql_notifier.dart';
 import 'package:flutter/material.dart';
 
 class SQLEditorLayout extends StatefulWidget {
-  const SQLEditorLayout({super.key});
+  const SQLEditorLayout({
+    required this.sqlNotifier,
+    super.key,
+  });
+
+  final SqlNotifier sqlNotifier;
 
   @override
   State<SQLEditorLayout> createState() => _SQLEditorLayoutState();
 }
-
 
 class _SQLEditorLayoutState extends State<SQLEditorLayout> {
   double _verticalDividerPosition = 0.5;
@@ -16,14 +20,14 @@ class _SQLEditorLayoutState extends State<SQLEditorLayout> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: const Text('SQL Editor Layout'),
-        ),
         body: Column(
           children: [
             Expanded(
               flex: (_verticalDividerPosition * 100).round(),
-              child: const SQLEditor(title: 'Top SQL Editor'),
+              child: SQLEditor(
+                sqlNotifier: widget.sqlNotifier,
+                isFormatted: false,
+              ),
             ),
             GestureDetector(
               behavior: HitTestBehavior.translucent,
@@ -85,7 +89,10 @@ class _SQLEditorLayoutState extends State<SQLEditorLayout> {
                   ),
                   Expanded(
                     flex: ((1 - _horizontalDividerPosition) * 100).round(),
-                    child: const SQLEditor(title: 'Bottom-Right SQL Editor'),
+                    child: SQLEditor(
+                      sqlNotifier: widget.sqlNotifier,
+                      isFormatted: true,
+                    ),
                   ),
                 ],
               ),
