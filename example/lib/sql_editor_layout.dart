@@ -4,19 +4,22 @@ import 'package:example/sql_editor.dart';
 import 'package:example/sql_notifier.dart';
 import 'package:flutter/material.dart';
 
-class SQLEditorLayout extends StatefulWidget {
-  const SQLEditorLayout({
+/// A layout that displays an SQL editor and a tree view of the SQL statement.
+class MainLayout extends StatefulWidget {
+  /// Creates a new main layout.
+  const MainLayout({
     required this.sqlNotifier,
     super.key,
   });
 
+  /// The SQL notifier
   final SqlNotifier sqlNotifier;
 
   @override
-  State<SQLEditorLayout> createState() => _SQLEditorLayoutState();
+  State<MainLayout> createState() => _MainLayoutState();
 }
 
-class _SQLEditorLayoutState extends State<SQLEditorLayout> {
+class _MainLayoutState extends State<MainLayout> {
   double _verticalDividerPosition = 0.5;
   double _horizontalDividerPosition = 0.5;
 
@@ -26,7 +29,7 @@ class _SQLEditorLayoutState extends State<SQLEditorLayout> {
           children: [
             Expanded(
               flex: (_verticalDividerPosition * 100).round(),
-              child: SQLEditor(
+              child: SQLTextEditor(
                 sqlNotifier: widget.sqlNotifier,
                 isFormatted: false,
               ),
@@ -65,7 +68,7 @@ class _SQLEditorLayoutState extends State<SQLEditorLayout> {
                   ),
                   Expanded(
                     flex: ((1 - _horizontalDividerPosition) * 100).round(),
-                    child: SQLEditor(
+                    child: SQLTextEditor(
                       sqlNotifier: widget.sqlNotifier,
                       isFormatted: true,
                     ),

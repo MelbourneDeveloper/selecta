@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:selecta/model/model.dart';
 import 'package:selecta/model/order_by.dart';
 
+/// A tree view of a select statement.
 class SelectStatementTreeView extends StatelessWidget {
+
+  /// Creates a new select statement tree view.
   const SelectStatementTreeView({required this.selectStatement, super.key});
 
+  /// The select statement to display.
   final SelectStatement selectStatement;
 
   @override

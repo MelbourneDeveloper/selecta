@@ -4,21 +4,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_highlight/themes/monokai-sublime.dart';
 import 'package:highlight/languages/sql.dart';
 
-class SQLEditor extends StatefulWidget {
-  const SQLEditor({
+/// An SQL editor.
+class SQLTextEditor extends StatefulWidget {
+
+  /// Creates a new SQL text editor.
+  const SQLTextEditor({
     required this.sqlNotifier,
     required this.isFormatted,
     super.key,
   });
 
+  /// The SQL notifier
   final SqlNotifier sqlNotifier;
+
+  /// Whether the SQL statement is formatted
   final bool isFormatted;
 
   @override
-  State<SQLEditor> createState() => _SQLEditorState();
+  State<SQLTextEditor> createState() => _SQLTextEditorState();
 }
 
-class _SQLEditorState extends State<SQLEditor> {
+class _SQLTextEditorState extends State<SQLTextEditor> {
   late final CodeController _codeController;
   bool _isUpdating = false;
 
