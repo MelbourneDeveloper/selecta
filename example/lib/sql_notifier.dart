@@ -4,7 +4,8 @@ import 'package:selecta/model/model.dart';
 import 'package:selecta/sql_parser.dart';
 
 class SqlNotifier extends ChangeNotifier {
-  String _sql = 'SELECT * FROM users';
+  String _sql =
+      '''SELECT employees.name, Departments.name FROM Employees INNER JOIN Departments ON Employees.department_id=Departments.id WHERE Employees.salary>50000 ORDER BY Employees.name ASC''';
   String get sql => _sql;
   String? _formattedSql;
   SelectStatement get selectStatement => toSelectStatement(_sql);
