@@ -151,23 +151,17 @@ String Function(String) applyFormatting(FormattingOptions options) =>
 String formatClause(
   String keyword,
   String clause,
-  FormattingOptions options, {
-  bool addNewline = true,
-}) =>
-    clause.isEmpty
-        ? ''
-        : '${options.newline}${applyFormatting(options)(keyword)}'
-            '${addNewline ? options.newline : ''}'
-            '${options.indent}${clause.replaceAll(', ', ',${options.newline}${options.indent}')}';
+  FormattingOptions options,
+) =>
+    clause.isEmpty ? '' : '${applyFormatting(options)(keyword)}\t$clause';
 
 /// Compose all formatters
 String sqlFormatter(AllClauses clauses, FormattingOptions options) => [
       formatClause('select', clauses.selectClause, options),
-      formatClause('from', clauses.fromClause, options, addNewline: false),
-      if (clauses.joinClause.isEmpty)
-        ''
-      else
-        '${options.newline}${clauses.joinClause.trim().replaceAll(' ', options.newline)}',
-      formatClause('where', clauses.whereClause, options),
-      formatClause('order by', clauses.orderByClause, options),
-    ].where((s) => s.isNotEmpty).join();
+      formatClause('from', clauses.fromClause, options),
+      if (clauses.joinClause.isNotEmpty) clauses.joinClause.trim(),
+      if (clauses.whereClause.isNotEmpty)
+        formatClause('where', clauses.whereClause, options),
+      if (clauses.orderByClause.isNotEmpty)
+        formatClause('order by', clauses.orderByClause, options),
+    ].where((s) => s.isNotEmpty).join(options.newline);
