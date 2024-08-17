@@ -14,13 +14,25 @@ class SelectStatementTreeView extends StatelessWidget {
         builder: (context, node, isSelected, expansionAnimation, select) =>
             AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          color: isSelected ? Colors.blue.withOpacity(0.2) : Colors.transparent,
+          decoration: BoxDecoration(
+            color:
+                isSelected ? Colors.blue.withOpacity(0.1) : Colors.transparent,
+            border: Border(
+              left: BorderSide(
+                color:
+                    _getColor(node.data).withOpacity(expansionAnimation.value),
+                width: 2,
+              ),
+            ),
+          ),
           child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+            dense: true,
             leading: _getIcon(node.data),
             title: Text(
               node.data,
               style: TextStyle(
-                color: isSelected ? Colors.blue : Colors.black,
+                color: _getColor(node.data),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
@@ -37,37 +49,33 @@ class SelectStatementTreeView extends StatelessWidget {
             child: Icon(
               Icons.chevron_right,
               color: Color.lerp(Colors.grey, Colors.blue, value),
+              size: 18,
             ),
           ),
         ),
       );
 
-  Widget _getIcon(String nodeData) {
-    IconData iconData;
-    Color color;
+  Color _getColor(String nodeData) => switch (nodeData.split(' ').first) {
+        'SELECT' => Colors.green,
+        'FROM' => Colors.orange,
+        'JOINS' => Colors.purple,
+        'WHERE' => Colors.red,
+        'ORDER' => Colors.blue,
+        _ => Colors.grey,
+      };
 
-    if (nodeData.startsWith('SELECT')) {
-      iconData = Icons.list_alt;
-      color = Colors.green;
-    } else if (nodeData.startsWith('FROM')) {
-      iconData = Icons.table_chart;
-      color = Colors.orange;
-    } else if (nodeData.startsWith('JOINS')) {
-      iconData = Icons.link;
-      color = Colors.purple;
-    } else if (nodeData.startsWith('WHERE')) {
-      iconData = Icons.filter_alt;
-      color = Colors.red;
-    } else if (nodeData.startsWith('ORDER BY')) {
-      iconData = Icons.sort;
-      color = Colors.blue;
-    } else {
-      iconData = Icons.code;
-      color = Colors.grey;
-    }
-
-    return Icon(iconData, color: color);
-  }
+  Widget _getIcon(String nodeData) => Icon(
+        switch (nodeData.split(' ').first) {
+          'SELECT' => Icons.list_alt,
+          'FROM' => Icons.table_chart,
+          'JOINS' => Icons.link,
+          'WHERE' => Icons.filter_alt,
+          'ORDER' => Icons.sort,
+          _ => Icons.code,
+        },
+        color: _getColor(nodeData),
+        size: 18,
+      );
 
   List<TreeNode<String>> _buildNodes() => [
         TreeNode<String>(
