@@ -225,6 +225,19 @@ void main() {
     ),
   );
 
+  test(
+    'SELECT with WHERE clause with LIKE',
+    () => testBidirectionalConversion(
+      'SELECT * FROM Products WHERE name LIKE "%apple%"',
+      validateStatement: (ss) {
+        expect(ss.from, 'Products');
+        expect(ss.where.elements.length, 1);
+        final first2 = ss.where.elements.first as WhereCondition;
+        expect(first2.clauseOperator, ClauseOperator.like);
+      },
+    ),
+  );
+
   group('Joins', () {
     test(
       'SELECT with INNER JOIN',

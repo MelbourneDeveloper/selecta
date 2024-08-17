@@ -25,12 +25,8 @@ typedef FormattingOptions = ({
 });
 
 /// Default formatting options
-const defaultOptions = (
-  newline: '\n',
-  indent: ' ',
-  uppercaseKeywords: true,
-  subClauseIndent: 6
-);
+const defaultOptions =
+    (newline: '\n', indent: ' ', uppercaseKeywords: true, subClauseIndent: 6);
 
 /// A function that returns the input string as is.
 String identity(String s) => s;
@@ -140,6 +136,7 @@ String defaultOperatorFormatter(ClauseOperator op) => switch (op) {
       ClauseOperator.greaterThanEqualTo => '>=',
       ClauseOperator.lessThan => '<',
       ClauseOperator.lessThanEqualTo => '<=',
+      ClauseOperator.like => ' LIKE ',
     };
 
 /// The default formatter for an [Operand].

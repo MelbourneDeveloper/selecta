@@ -183,7 +183,7 @@ Map<String, String> _extractClauses(String sql) {
 
 /// Tokenizes a where clause string into individual tokens.
 List<String> _tokenizeWhereClause(String whereClause) =>
-    // Split the where clause into tokens, preserving quoted strings and 
+    // Split the where clause into tokens, preserving quoted strings and
     // parentheses
     whereClause
         .splitMapJoin(
@@ -197,43 +197,46 @@ List<String> _tokenizeWhereClause(String whereClause) =>
         .split(RegExp(r'\s+'));
 
 /// Parses a list of tokens into a [WhereCondition].
-WhereCondition _parseCondition(List<String> conditionTokens) {
-  if (conditionTokens.isEmpty) {
-    throw const FormatException('Empty condition');
-  }
+WhereCondition _parseCondition(List<String> conditionTokens) =>
+    conditionTokens.isEmpty
+        ? throw const FormatException('Empty condition')
+        : _buildWhereCondition(
+            conditionTokens,
+            _findOperatorIndex(conditionTokens),
+          );
 
-  final operatorIndex = conditionTokens
-      .indexWhere((t) => ['=', '!=', '>', '>=', '<', '<='].contains(t));
-
-  if (operatorIndex == -1) {
-    throw FormatException(
-      'No valid operator found in condition: ${conditionTokens.join(' ')}',
+int _findOperatorIndex(List<String> tokens) => tokens.indexWhere(
+      (t) =>
+          ['=', '!=', '>', '>=', '<', '<=', 'LIKE'].contains(t.toUpperCase()),
     );
-  }
 
-  return WhereCondition(
-    _parseOperand(conditionTokens.sublist(0, operatorIndex).join(' ')),
-    _parseOperator(conditionTokens[operatorIndex]),
-    _parseOperand(conditionTokens.sublist(operatorIndex + 1).join(' ')),
-  );
-}
+WhereCondition _buildWhereCondition(List<String> tokens, int operatorIndex) =>
+    operatorIndex == -1
+        ? throw FormatException(
+            'No valid operator found in condition: ${tokens.join(' ')}',
+          )
+        : WhereCondition(
+            _parseOperand(tokens.sublist(0, operatorIndex).join(' ')),
+            _parseOperator(tokens[operatorIndex]),
+            _parseOperand(tokens.sublist(operatorIndex + 1).join(' ')),
+          );
 
 /// Convert the string representation of an operator to a [ClauseOperator].
-ClauseOperator _parseOperator(String op) => switch (op) {
+ClauseOperator _parseOperator(String op) => switch (op.toUpperCase()) {
       '=' => ClauseOperator.equals,
       '!=' => ClauseOperator.notEquals,
       '>' => ClauseOperator.greaterThan,
       '>=' => ClauseOperator.greaterThanEqualTo,
       '<' => ClauseOperator.lessThan,
       '<=' => ClauseOperator.lessThanEqualTo,
-      _ => throw FormatException('Unknown operator: $op'),
+      'LIKE' => ClauseOperator.like,
+      _ => throw FormatException('Invalid operator: $op'),
     };
 
 /// Parses a string value into an [Operand].
-Operand _parseOperand(String value) =>
-    (value.startsWith('"') && value.endsWith('"')) ||
-            (value.startsWith("'") && value.endsWith("'"))
-        ? StringLiteralOperand(value.substring(1, value.length - 1))
-        : num.tryParse(value) != null
-            ? NumberLiteralOperand(num.parse(value))
-            : ColumnReferenceOperand(value);
+Operand _parseOperand(String operand) =>
+    operand.startsWith("'") && operand.endsWith("'")
+        ? StringLiteralOperand(operand.substring(1, operand.length - 1))
+        : num.tryParse(operand) != null
+            ? NumberLiteralOperand(num.parse(operand))
+            : ColumnReferenceOperand(operand);

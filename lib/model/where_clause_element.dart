@@ -58,6 +58,9 @@ enum ClauseOperator {
 
   /// The less than or equals operator.
   lessThanEqualTo,
+
+  /// The like operator.
+  like,
 }
 
 /// A type that represents a logical operator.
