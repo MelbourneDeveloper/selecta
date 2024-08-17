@@ -96,7 +96,7 @@ void main() {
   test(
     'SELECT with multiple conditions and grouping',
     () => testBidirectionalConversion(
-      '''SELECT * FROM Employees WHERE (department="Sales" OR department="Marketing" ) AND salary>50000''',
+      '''SELECT * FROM Employees WHERE ( department="Sales" OR department="Marketing" ) AND salary>50000''',
       validateStatement: (ss) {
         expect(ss.where.elements[0], equals(GroupingOperator.open));
         expect(
@@ -164,7 +164,7 @@ void main() {
   test(
     'SELECT with WHERE clause using nested parentheses',
     () => testBidirectionalConversion(
-      '''SELECT * FROM Products WHERE (category="Electronics" AND price>500) OR (category="Books" AND price<20)''',
+      '''SELECT * FROM Products WHERE ( category="Electronics" AND price>500 ) OR ( category="Books" AND price<20 )''',
     ),
   );
 
@@ -178,13 +178,10 @@ void main() {
   test(
     'SELECT with WHERE clause mixing AND and OR without parentheses',
     () => testBidirectionalConversion(
-      '''SELECT * FROM Customers WHERE country="USA" AND (state="California" OR state="New York" )''',
+      '''SELECT * FROM Customers WHERE country="USA" AND ( state="California" OR state="New York" )''',
       validateStatement: (ss) {
         expect(ss.where.elements.length, 7);
-        expect(ss.orderBy.length, 1);
-        final orderByColumn = ss.orderBy.first as OrderByColumn;
-        expect(orderByColumn.columnName, 'name');
-        expect(orderByColumn.direction, SortDirection.descending);
+        expect(ss.orderBy.length, 0);
       },
     ),
   );
@@ -193,7 +190,7 @@ void main() {
     'SELECT with WHERE clause mixing AND and OR without parentheses '
     'with ORDER BY',
     () => testBidirectionalConversion(
-      '''SELECT * FROM Customers WHERE country="USA" AND (state="California" OR state="New York" ) ORDER BY name DESC''',
+      '''SELECT * FROM Customers WHERE country="USA" AND ( state="California" OR state="New York" ) ORDER BY name DESC''',
     ),
   );
 

@@ -81,23 +81,21 @@ WhereClauseGroup parseWhereClause(String whereClause) {
   for (var i = 0; i < tokens.length; i++) {
     switch (tokens[i].toUpperCase()) {
       case '(':
-        final closingIndex = _findClosingParenthesis(tokens, i);
-        elements.add(
-          parseWhereClause(tokens.sublist(i + 1, closingIndex).join(' ')),
-        );
-        i = closingIndex;
+        elements.add(GroupingOperator.open);
+      case ')':
+        elements.add(GroupingOperator.close);
       case 'AND':
         elements.add(LogicalOperator.and);
       case 'OR':
         elements.add(LogicalOperator.or);
       default:
-        // Find the next logical operator or end of clause
-        final nextLogicalOpIndex = tokens.indexWhere(
-          (t) => ['AND', 'OR'].contains(t.toUpperCase()),
+        // Find the next logical operator, parenthesis, or end of clause
+        final nextSpecialIndex = tokens.indexWhere(
+          (t) => ['AND', 'OR', '(', ')'].contains(t.toUpperCase()),
           i + 1,
         );
         final conditionEndIndex =
-            nextLogicalOpIndex == -1 ? tokens.length : nextLogicalOpIndex;
+            nextSpecialIndex == -1 ? tokens.length : nextSpecialIndex;
 
         // Parse the condition
         elements.add(_parseCondition(tokens.sublist(i, conditionEndIndex)));
@@ -185,44 +183,18 @@ Map<String, String> _extractClauses(String sql) {
 
 /// Tokenizes a where clause string into individual tokens.
 List<String> _tokenizeWhereClause(String whereClause) =>
-    // Split the where clause into tokens, preserving quoted strings
+    // Split the where clause into tokens, preserving quoted strings and 
+    // parentheses
     whereClause
         .splitMapJoin(
-          RegExp(r'''(\s+)|("[^"]*")|('[^']*')|([!<>=]+)'''),
+          RegExp(r'''(\s+)|("[^"]*")|('[^']*')|([!<>=]+)|(\(|\))'''),
           onMatch: (m) =>
-              '${m.group(2) ?? ''}${m.group(3) ?? ''}${m.group(4) ?? ''} ',
+              '${m.group(2) ?? ''}${m.group(3) ?? ''}${m.group(4) ?? ''}'
+              '${m.group(5) ?? ''} ',
           onNonMatch: (s) => '$s ',
         )
         .trim()
         .split(RegExp(r'\s+'));
-
-/// Finds the index of the closing parenthesis for an open parenthesis at
-/// [openIndex].
-int _findClosingParenthesis(List<String> tokens, int openIndex) =>
-    _findClosingParenthesisRecursive(tokens, openIndex + 1, 1);
-
-int _findClosingParenthesisRecursive(
-  List<String> tokens,
-  int currentIndex,
-  int count,
-) =>
-    currentIndex >= tokens.length
-        ? throw const FormatException('Mismatched parentheses')
-        : switch (tokens[currentIndex]) {
-            '(' => _findClosingParenthesisRecursive(
-                tokens,
-                currentIndex + 1,
-                count + 1,
-              ),
-            ')' when count == 1 => currentIndex,
-            ')' => _findClosingParenthesisRecursive(
-                tokens,
-                currentIndex + 1,
-                count - 1,
-              ),
-            _ =>
-              _findClosingParenthesisRecursive(tokens, currentIndex + 1, count),
-          };
 
 /// Parses a list of tokens into a [WhereCondition].
 WhereCondition _parseCondition(List<String> conditionTokens) {
