@@ -49,8 +49,5 @@ void testFormatting(
     allClausesFormatter: (clauses) => sqlFormatter(clauses, options),
   );
 
-  // ignore: avoid_print
-  print(formatted);
-
   expect(formatted, equals(expected));
 }

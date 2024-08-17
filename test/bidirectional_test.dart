@@ -25,11 +25,12 @@ void testBidirectionalConversion(
 }
 
 void main() {
-  test('Select two columns', () {
-    final selectStatement = toSelectStatement('SELECT id, name FROM Users');
-    // ignore: avoid_print
-    print('Columns: ${selectStatement.select} From: ${selectStatement.from}');
-  });
+  test(
+    'SELECT id, name FROM Users',
+    () => testBidirectionalConversion(
+      'SELECT id, name FROM Users',
+    ),
+  );
 
   test(
     'Simple SELECT *',
