@@ -156,17 +156,11 @@ String formatClause(
   String clause,
   FormattingOptions options, {
   bool isSubclause = false,
-}) {
-  final keywordStr =
-      options.uppercaseKeywords ? keyword.toUpperCase() : keyword;
-  final formattedClause = clause.contains(',')
-      ? clause.split(',').map((s) => s.trim()).join(
-            ',${options.newline}${options.indent * options.subClauseIndent}',
-          )
-      : clause.trim();
-
-  return '$keywordStr $formattedClause';
-}
+}) =>
+    '${options.uppercaseKeywords ? keyword.toUpperCase() : keyword} '
+    '${clause.contains(',') ? clause.split(',').map((s) => s.trim()).join(
+          ',${options.newline}${options.indent * options.subClauseIndent}',
+        ) : clause.trim()}';
 
 /// Compose all formatters
 String sqlFormatter(AllClauses clauses, FormattingOptions options) => [
