@@ -5,7 +5,7 @@ import 'package:selecta/model/order_by.dart';
 /// A type that represents an SQL Select statement.
 class SelectStatement {
   /// Creates a new select statement.
-  SelectStatement(
+  const SelectStatement(
     this.from,
     this.select, {
     required this.where,

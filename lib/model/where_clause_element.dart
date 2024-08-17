@@ -86,7 +86,7 @@ enum GroupingOperator implements WhereClauseElement {
 /// The [SelectStatement] could just have a list of [WhereClauseElement]s.
 final class WhereClauseGroup implements WhereClauseElement {
   /// Creates a new where clause group.
-  WhereClauseGroup(this.elements);
+  const WhereClauseGroup(this.elements);
 
   /// The elements of the group.
   final List<WhereClauseElement> elements;

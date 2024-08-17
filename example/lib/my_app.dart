@@ -3,7 +3,12 @@ import 'package:example/sql_notifier.dart';
 import 'package:flutter/material.dart';
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({
+    required this.sqlNotifier,
+    super.key,
+  });
+
+  final SqlNotifier sqlNotifier;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -13,7 +18,7 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
         ),
         home: SQLEditorLayout(
-          sqlNotifier: SqlNotifier(),
+          sqlNotifier: sqlNotifier,
         ),
       );
 }

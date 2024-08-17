@@ -1,3 +1,5 @@
+import 'package:example/main.dart';
+import 'package:example/select_statment_treeview.dart';
 import 'package:example/sql_editor.dart';
 import 'package:example/sql_notifier.dart';
 import 'package:flutter/material.dart';
@@ -39,20 +41,7 @@ class _SQLEditorLayoutState extends State<SQLEditorLayout> {
                       _verticalDividerPosition.clamp(0.1, 0.9);
                 });
               },
-              child: Container(
-                height: 10,
-                color: Colors.grey[300],
-                child: Center(
-                  child: Container(
-                    width: 30,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                ),
-              ),
+              child: _horizontalDivider(),
             ),
             Expanded(
               flex: ((1 - _verticalDividerPosition) * 100).round(),
@@ -60,7 +49,7 @@ class _SQLEditorLayoutState extends State<SQLEditorLayout> {
                 children: [
                   Expanded(
                     flex: (_horizontalDividerPosition * 100).round(),
-                    child: Container(color: Colors.grey[200]),
+                    child: _treeViewPanel(),
                   ),
                   GestureDetector(
                     behavior: HitTestBehavior.translucent,
@@ -72,20 +61,7 @@ class _SQLEditorLayoutState extends State<SQLEditorLayout> {
                             _horizontalDividerPosition.clamp(0.1, 0.9);
                       });
                     },
-                    child: Container(
-                      width: 10,
-                      color: Colors.grey[300],
-                      child: Center(
-                        child: Container(
-                          width: 5,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[400],
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
+                    child: _verticalDivider(),
                   ),
                   Expanded(
                     flex: ((1 - _horizontalDividerPosition) * 100).round(),
@@ -98,6 +74,43 @@ class _SQLEditorLayoutState extends State<SQLEditorLayout> {
               ),
             ),
           ],
+        ),
+      );
+
+  Container _treeViewPanel() => Container(
+        color: Colors.grey[200],
+        child: SelectStatementTreeView(
+          selectStatement: sqlNotifier.selectStatement,
+        ),
+      );
+
+  Container _verticalDivider() => Container(
+        width: 10,
+        color: Colors.grey[300],
+        child: Center(
+          child: Container(
+            width: 5,
+            height: 30,
+            decoration: BoxDecoration(
+              color: Colors.grey[400],
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        ),
+      );
+
+  Container _horizontalDivider() => Container(
+        height: 10,
+        color: Colors.grey[300],
+        child: Center(
+          child: Container(
+            width: 30,
+            height: 5,
+            decoration: BoxDecoration(
+              color: Colors.grey[400],
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
         ),
       );
 }
