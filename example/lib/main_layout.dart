@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:example/firestore/firestore_setup_dialog.dart';
+import 'package:example/firestore/functions.dart';
 import 'package:example/main.dart';
 import 'package:example/select_statment_treeview.dart';
 import 'package:example/sql_editor.dart';
@@ -138,23 +139,45 @@ class _MainLayoutState extends State<MainLayout> {
 
   Widget _dataGridPlaceholder() => Container(
         color: Colors.grey[100],
-        child: Center(
+        child: SizedBox.expand(
           child: firestore != null
               ? Column(
-                  children: [_dataTable(firestore!)],
+                  children: [
+                    Expanded(
+                      child: _getDataAndTable(firestore!),
+                    ),
+                    SizedBox(
+                      width: 100,
+                      height: 80,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                          onPressed: () async {},
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.refresh),
+                              Text('Go'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 )
               : const Text('Connect to Firestore to query'),
         ),
       );
 
-  Widget _dataTable(FirebaseFirestore firestore) =>
+  Widget _getDataAndTable(FirebaseFirestore firestore) =>
       StreamBuilder<QuerySnapshot>(
-        stream: firestore
-            .collection('stuff')
-            //.where('test2', isEqualTo: 'fdfd')
-            .orderBy('test2')
-            //.limit(2)
-            .snapshots(),
+        stream: getStream(firestore),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -170,31 +193,33 @@ class _MainLayoutState extends State<MainLayout> {
           }
 
           // Get all unique field names from all documents
-          final allFields = docs.fold<Set<String>>(
-            {},
-            (fields, doc) =>
-                fields..addAll((doc.data()! as Map<String, dynamic>).keys),
-          ).toList();
+          final allFields = getFields(docs);
 
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SingleChildScrollView(
-              child: DataTable(
-                columns: allFields
-                    .map((field) => DataColumn(label: Text(field)))
-                    .toList(),
-                rows: docs.map((doc) {
-                  final data = doc.data()! as Map<String, dynamic>;
-                  return DataRow(
-                    cells: allFields.map((field) {
-                      final value = data[field]?.toString() ?? '';
-                      return DataCell(Text(value));
-                    }).toList(),
-                  );
-                }).toList(),
-              ),
-            ),
-          );
+          return _dataTable(allFields, docs);
         },
+      );
+
+  SingleChildScrollView _dataTable(
+    List<String> allFields,
+    List<QueryDocumentSnapshot<Object?>> docs,
+  ) =>
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SingleChildScrollView(
+          child: DataTable(
+            columns: allFields
+                .map((field) => DataColumn(label: Text(field)))
+                .toList(),
+            rows: docs.map((doc) {
+              final data = doc.data()! as Map<String, dynamic>;
+              return DataRow(
+                cells: allFields.map((field) {
+                  final value = data[field]?.toString() ?? '';
+                  return DataCell(Text(value));
+                }).toList(),
+              );
+            }).toList(),
+          ),
+        ),
       );
 }
