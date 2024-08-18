@@ -25,6 +25,7 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   double _horizontalDividerPosition = 0.55;
   double _verticalDividerPosition = 0.4;
+  Stream<QuerySnapshot<Map<String, dynamic>>>? _snapshotsStream;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -61,7 +62,7 @@ class _MainLayoutState extends State<MainLayout> {
             _horizontalDivider(context),
             Expanded(
               flex: ((1 - _verticalDividerPosition) * 100).round(),
-              child: _dataGridPlaceholder(),
+              child: _dataPanel(),
             ),
           ],
         ),
@@ -137,14 +138,16 @@ class _MainLayoutState extends State<MainLayout> {
         ),
       );
 
-  Widget _dataGridPlaceholder() => Container(
+  Widget _dataPanel() => Container(
         color: Colors.grey[100],
         child: SizedBox.expand(
           child: firestore != null
               ? Column(
                   children: [
                     Expanded(
-                      child: _getDataAndTable(firestore!),
+                      child: _snapshotsStream != null
+                          ? _getDataAndTable(_snapshotsStream!)
+                          : const SizedBox.expand(),
                     ),
                     SizedBox(
                       width: 100,
@@ -158,7 +161,9 @@ class _MainLayoutState extends State<MainLayout> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          onPressed: () async {},
+                          onPressed: () => setState(
+                            () => _snapshotsStream = getStream(firestore!),
+                          ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -175,9 +180,9 @@ class _MainLayoutState extends State<MainLayout> {
         ),
       );
 
-  Widget _getDataAndTable(FirebaseFirestore firestore) =>
+  Widget _getDataAndTable(Stream<QuerySnapshot<Map<String, dynamic>>> stream) =>
       StreamBuilder<QuerySnapshot>(
-        stream: getStream(firestore),
+        stream: stream,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
@@ -192,34 +197,33 @@ class _MainLayoutState extends State<MainLayout> {
             return const Center(child: Text('No data available'));
           }
 
-          // Get all unique field names from all documents
-          final allFields = getFields(docs);
-
-          return _dataTable(allFields, docs);
+          return _dataTable(docs);
         },
       );
 
   SingleChildScrollView _dataTable(
-    List<String> allFields,
     List<QueryDocumentSnapshot<Object?>> docs,
-  ) =>
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SingleChildScrollView(
-          child: DataTable(
-            columns: allFields
-                .map((field) => DataColumn(label: Text(field)))
-                .toList(),
-            rows: docs.map((doc) {
-              final data = doc.data()! as Map<String, dynamic>;
-              return DataRow(
-                cells: allFields.map((field) {
-                  final value = data[field]?.toString() ?? '';
-                  return DataCell(Text(value));
-                }).toList(),
-              );
-            }).toList(),
-          ),
+  ) {
+    // Get all unique field names from all documents
+    final allFields = getFields(docs);
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SingleChildScrollView(
+        child: DataTable(
+          columns:
+              allFields.map((field) => DataColumn(label: Text(field))).toList(),
+          rows: docs.map((doc) {
+            final data = doc.data()! as Map<String, dynamic>;
+            return DataRow(
+              cells: allFields.map((field) {
+                final value = data[field]?.toString() ?? '';
+                return DataCell(Text(value));
+              }).toList(),
+            );
+          }).toList(),
         ),
-      );
+      ),
+    );
+  }
 }
