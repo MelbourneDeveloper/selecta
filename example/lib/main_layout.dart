@@ -26,6 +26,7 @@ class _MainLayoutState extends State<MainLayout> {
   double _horizontalDividerPosition = 0.55;
   double _verticalDividerPosition = 0.4;
   Stream<QuerySnapshot<Map<String, dynamic>>>? _snapshotsStream;
+  String? _queryError;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -147,7 +148,9 @@ class _MainLayoutState extends State<MainLayout> {
                     Expanded(
                       child: _snapshotsStream != null
                           ? _getDataAndTable(_snapshotsStream!)
-                          : const SizedBox.expand(),
+                          : Center(
+                              child: Text(_queryError ?? 'No data'),
+                            ),
                     ),
                     SizedBox(
                       width: 100,
@@ -161,10 +164,7 @@ class _MainLayoutState extends State<MainLayout> {
                               borderRadius: BorderRadius.circular(30),
                             ),
                           ),
-                          onPressed: () => setState(
-                            () => _snapshotsStream = firestore!
-                                .getStream(sqlNotifier.selectStatement),
-                          ),
+                          onPressed: () => setState(_refreshQuery),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -180,6 +180,20 @@ class _MainLayoutState extends State<MainLayout> {
               : const Text('Connect to Firestore to query'),
         ),
       );
+
+  void _refreshQuery() {
+    try {
+      setState(() {
+        _snapshotsStream = null;
+        _queryError = null;
+      });
+      final stream = firestore!.getStream(sqlNotifier.selectStatement);
+      setState(() => _snapshotsStream = stream);
+      // ignore: avoid_catches_without_on_clauses
+    } catch (e) {
+      setState(() => _queryError = 'Something went wrong querying\n$e');
+    }
+  }
 
   Widget _getDataAndTable(Stream<QuerySnapshot<Map<String, dynamic>>> stream) =>
       StreamBuilder<QuerySnapshot>(

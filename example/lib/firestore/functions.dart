@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:selecta/model/model.dart';
 import 'package:selecta/model/order_by.dart';
@@ -21,12 +22,18 @@ extension FirebaseFirestoreExtensions on FirebaseFirestore {
 
     for (final where in selectStatement.where.elements) {
       //This is very basic. It doesn't deal with brackets
-      if (where case final WhereCondition ad)
-        colRef = colRef.where(ad.leftOperand, isEqualTo: ad.rightOperand);
+      if (where is WhereCondition) {
+        if (where.leftOperand case final ColumnReferenceOperand cro) {
+          if (where.rightOperand case final StringLiteralOperand slo)
+            colRef = colRef.where(cro.value, isEqualTo: slo.value);
+          else if (where.rightOperand case final NumberLiteralOperand nlo)
+            colRef = colRef.where(cro.value, isEqualTo: nlo.value);
+        }
+      }
     }
 
-    for (final where in selectStatement.orderBy) {
-      if (where case final OrderByColumn obc)
+    for (final element in selectStatement.orderBy) {
+      if (element case final OrderByColumn obc)
         colRef = colRef.orderBy(
           obc.columnName,
           descending: obc.direction == SortDirection.descending,
