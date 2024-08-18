@@ -4,5 +4,6 @@ include: package:austerity/analysis_options.yaml
 analyzer:
   errors:
     use_late_for_private_fields_and_variables: ignore
+    curly_braces_in_flow_control_structures: ignore
     public_member_api_docs: warning
 

@@ -162,7 +162,8 @@ class _MainLayoutState extends State<MainLayout> {
                             ),
                           ),
                           onPressed: () => setState(
-                            () => _snapshotsStream = getStream(firestore!),
+                            () => _snapshotsStream = firestore!
+                                .getStream(sqlNotifier.selectStatement),
                           ),
                           child: const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
