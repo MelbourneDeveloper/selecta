@@ -1,3 +1,4 @@
+import 'package:example/firestore/firestore_setup_dialog.dart';
 import 'package:example/main.dart';
 import 'package:example/select_statment_treeview.dart';
 import 'package:example/sql_editor.dart';
@@ -25,6 +26,15 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          title: const Text('selecta'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.link),
+              onPressed: () async => connectToFirestoreDialog(context),
+            ),
+          ],
+        ),
         body: Column(
           children: [
             Expanded(
