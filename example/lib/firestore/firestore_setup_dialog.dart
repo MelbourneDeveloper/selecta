@@ -1,10 +1,11 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:async';
 import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// A dialog that allows you to connect to Firestore
 class FirestoreSetupDialog extends StatefulWidget {
@@ -25,9 +26,40 @@ class _FirestoreSetupDialogState extends State<FirestoreSetupDialog> {
       TextEditingController(text: '');
   final TextEditingController _messagingSenderIdController =
       TextEditingController(text: '');
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_loadStoredCredentials());
+  }
+
+  Future<void> _loadStoredCredentials() async {
+    _projectIdController.text =
+        await _secureStorage.read(key: 'projectId') ?? '';
+    _apiKeyController.text = await _secureStorage.read(key: 'apiKey') ?? '';
+    _appIdController.text = await _secureStorage.read(key: 'appId') ?? '';
+    _messagingSenderIdController.text =
+        await _secureStorage.read(key: 'messagingSenderId') ?? '';
+  }
+
+  Future<void> _storeCredentials() async {
+    await _secureStorage.write(
+      key: 'projectId',
+      value: _projectIdController.text,
+    );
+    await _secureStorage.write(key: 'apiKey', value: _apiKeyController.text);
+    await _secureStorage.write(key: 'appId', value: _appIdController.text);
+    await _secureStorage.write(
+      key: 'messagingSenderId',
+      value: _messagingSenderIdController.text,
+    );
+  }
 
   Future<void> _initializeFirestore() async {
     try {
+      await _storeCredentials();
+
       await Firebase.initializeApp(
         name: 'dynamic_instance',
         options: FirebaseOptions(
@@ -37,9 +69,9 @@ class _FirestoreSetupDialogState extends State<FirestoreSetupDialog> {
           messagingSenderId: _messagingSenderIdController.text,
         ),
       );
+
       final firestore =
           FirebaseFirestore.instanceFor(app: Firebase.app('dynamic_instance'));
-
       Navigator.of(context).pop(firestore);
       // ignore: avoid_catches_without_on_clauses
     } catch (e) {
@@ -75,7 +107,6 @@ class _FirestoreSetupDialogState extends State<FirestoreSetupDialog> {
           ],
         ),
         child: SingleChildScrollView(
-          // In case shit gets too tall
           child: Form(
             key: _formKey,
             child: Column(

@@ -16,6 +16,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_highlight: ^0.7.0
+  flutter_secure_storage: ^9.2.2
   selecta:
     path: ..
 
