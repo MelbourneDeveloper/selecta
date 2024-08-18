@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:example/firestore/firestore_setup_dialog.dart';
 import 'package:example/main.dart';
 import 'package:example/select_statment_treeview.dart';
@@ -31,7 +32,10 @@ class _MainLayoutState extends State<MainLayout> {
           actions: [
             IconButton(
               icon: const Icon(Icons.link),
-              onPressed: () async => connectToFirestoreDialog(context),
+              onPressed: () async {
+                final fs = await connectToFirestoreDialog(context);
+                setState(() => firestore = fs);
+              },
             ),
           ],
         ),
@@ -134,11 +138,63 @@ class _MainLayoutState extends State<MainLayout> {
 
   Widget _dataGridPlaceholder() => Container(
         color: Colors.grey[100],
-        child: const Center(
-          child: Text(
-            'Data Grid Placeholder',
-            style: TextStyle(fontSize: 24, color: Colors.grey),
-          ),
+        child: Center(
+          child: firestore != null
+              ? Column(
+                  children: [_dataTable(firestore!)],
+                )
+              : const Text('Connect to Firestore to query'),
         ),
+      );
+
+  Widget _dataTable(FirebaseFirestore firestore) =>
+      StreamBuilder<QuerySnapshot>(
+        stream: firestore
+            .collection('stuff')
+            //.where('test2', isEqualTo: 'fdfd')
+            .orderBy('test2')
+            //.limit(2)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data!.docs;
+          if (docs.isEmpty) {
+            return const Center(child: Text('No data available'));
+          }
+
+          // Get all unique field names from all documents
+          final allFields = docs.fold<Set<String>>(
+            {},
+            (fields, doc) =>
+                fields..addAll((doc.data()! as Map<String, dynamic>).keys),
+          ).toList();
+
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SingleChildScrollView(
+              child: DataTable(
+                columns: allFields
+                    .map((field) => DataColumn(label: Text(field)))
+                    .toList(),
+                rows: docs.map((doc) {
+                  final data = doc.data()! as Map<String, dynamic>;
+                  return DataRow(
+                    cells: allFields.map((field) {
+                      final value = data[field]?.toString() ?? '';
+                      return DataCell(Text(value));
+                    }).toList(),
+                  );
+                }).toList(),
+              ),
+            ),
+          );
+        },
       );
 }
