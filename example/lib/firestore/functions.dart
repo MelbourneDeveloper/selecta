@@ -16,7 +16,8 @@ extension FirebaseFirestoreExtensions on FirebaseFirestore {
   Stream<QuerySnapshot<Map<String, dynamic>>> getStream(
     SelectStatement selectStatement,
   ) {
-    var colRef = collection('stuff') as Query<Map<String, dynamic>>;
+    var colRef =
+        collection(selectStatement.from) as Query<Map<String, dynamic>>;
 
     for (final where in selectStatement.where.elements) {
       //This is very basic. It doesn't deal with brackets
