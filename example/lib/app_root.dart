@@ -1,4 +1,4 @@
-import 'package:example/sql_editor_layout.dart';
+import 'package:example/main_layout.dart';
 import 'package:example/sql_notifier.dart';
 import 'package:flutter/material.dart';
 
