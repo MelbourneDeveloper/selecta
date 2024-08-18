@@ -13,7 +13,13 @@ class SelectStatementTreeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TreeView<String>(
         nodes: _buildNodes(),
-        builder: (context, node, isSelected, expansionAnimation, select) =>
+        builder: (
+          context,
+          node,
+          isSelected,
+          expansionAnimation,
+          select,
+        ) =>
             AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           decoration: BoxDecoration(
@@ -97,19 +103,6 @@ class SelectStatementTreeView extends StatelessWidget {
         _ => Colors.black54,
       };
 
-  // Widget _getIcon(String nodeData) => Icon(
-  //       switch (nodeData.split(' ').first) {
-  //         'SELECT' => Icons.list_alt,
-  //         'FROM' => Icons.table_chart,
-  //         'JOINS' => Icons.link,
-  //         'WHERE' => Icons.filter_alt,
-  //         'ORDER' => Icons.sort,
-  //         _ => Icons.code,
-  //       },
-  //       color: _getColor(nodeData),
-  //       size: 16,
-  //     );
-
   List<TreeNode<String>> _buildNodes() => [
         TreeNode<String>(
           const Key('select'),
@@ -126,11 +119,12 @@ class SelectStatementTreeView extends StatelessWidget {
             'JOINS',
             _buildJoinNodes(),
           ),
-        TreeNode<String>(
-          const Key('where'),
-          'WHERE',
-          _buildWhereNodes(selectStatement.where),
-        ),
+        if (selectStatement.where.elements.isNotEmpty)
+          TreeNode<String>(
+            const Key('where'),
+            'WHERE',
+            _buildWhereNodes(selectStatement.where),
+          ),
         if (selectStatement.orderBy.isNotEmpty)
           TreeNode<String>(
             const Key('orderBy'),
